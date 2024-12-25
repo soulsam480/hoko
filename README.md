@@ -28,3 +28,9 @@ Experimental community BMTC bus tracking app which aims to be accurate in tracki
 - if they're not, check for route topic, the're will be multiple available or empty
   - if many are available ask to choose which one based on location and timing
   - once chosen, subscribe and keep plotting
+
+## Early screenshots
+![image](https://github.com/user-attachments/assets/a2565e68-fc7a-4bb1-9437-7f9898bb8a9b)
+![image](https://github.com/user-attachments/assets/47239010-ead2-472f-9a91-53830934a88a)
+![image](https://github.com/user-attachments/assets/c04827e8-fc56-4d64-a8e5-7b0aa15157ae)
+
