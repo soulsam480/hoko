@@ -4,11 +4,13 @@
 		"module": "ESNext",
 		"target": "ESNext",
 		"moduleResolution": "bundler",
-		"jsx": "react",
-		"jsxFactory": "h",
-		"jsxFragmentFactory": "Fragment",
+		"jsx": "react-jsx",
+		"jsxImportSource": "preact",
 		"types": [
-			"vite/client"
+			"bun",
+			"vite/client",
+			"vite-plugin-pwa/client",
+			"unplugin-icons/types/preact"
 		]
 	},
 	"include": [

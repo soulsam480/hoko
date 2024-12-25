@@ -9,7 +9,7 @@ async function main() {
 		for (const feature of json.features) {
 			const { route_list, trip_list, ...rest } = feature.properties;
 
-			const [lat, long] = feature.geometry.coordinates;
+			const [long, lat] = feature.geometry.coordinates;
 
 			const name = await trx
 				.insertInto("stops")

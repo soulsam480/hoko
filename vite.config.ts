@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from "vite";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
+import Icons from "unplugin-icons/vite";
 
 function SQLiteDevPlugin(): Plugin {
 	return {
@@ -19,6 +20,11 @@ export default defineConfig({
 	plugins: [
 		preact(),
 		SQLiteDevPlugin(),
+		Icons({
+			autoInstall: true,
+			compiler: "jsx",
+			jsx: "preact",
+		}),
 		VitePWA({
 			registerType: "autoUpdate",
 			includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
@@ -78,7 +84,7 @@ export default defineConfig({
 			{ find: "react/jsx-runtime", replacement: "preact/jsx-runtime" },
 		],
 	},
-	// optimizeDeps: {
-	// 	exclude: ["sqlocal"],
-	// },
+	optimizeDeps: {
+		exclude: ["sqlocal"],
+	},
 });

@@ -1,54 +1,23 @@
-import { Response, Message as WorkerMessage } from "./worker";
-import HokoProcessor from "./worker?worker";
+import { SQLocal } from "sqlocal";
 
-const worker = new HokoProcessor();
+const { sql, overwriteDatabaseFile } = new SQLocal("hoko.sqlite");
 
-const runningQuries = new Map<
-	string,
-	[resolve: (message: any) => void, reject: (error: unknown) => void]
->();
+const hasDbInit = localStorage.getItem("init_db");
 
-export async function execQuery<T>(message: WorkerMessage): Promise<T> {
-	const id = window.crypto.randomUUID();
+async function initDatabase() {
+	if (hasDbInit !== null) return;
 
-	worker.postMessage({
-		...message,
-		id,
-	});
+	const data = await fetch("hoko-db.sqlite").then((res) => res.blob());
 
-	return new Promise((res, rej) => {
-		runningQuries.set(id, [res, rej]);
-	});
+	await overwriteDatabaseFile(data);
+
+	localStorage.setItem("init_db", "true");
 }
 
-worker.addEventListener("message", (event) => {
-	if (event.data.id !== undefined) {
-		const data = event.data as Response;
+const dbPromise = initDatabase();
 
-		const query = runningQuries.get(data.id);
-
-		if (query) {
-			const [resolve, reject] = query;
-
-			if (data.type === "suc") {
-				resolve(data);
-			} else {
-				reject(data);
-			}
-		}
-
-		runningQuries.delete(data.id);
-	}
-});
-
-async function main() {
-	console.log(
-		await execQuery({
-			lat: 10,
-			long: 10,
-			type: "closest-route",
-		}),
-	);
+async function isReady() {
+	await dbPromise;
 }
 
-main();
+export { sql, isReady };

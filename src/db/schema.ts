@@ -1,3 +1,4 @@
+import { Selectable } from "kysely";
 import { Generated } from "kysely";
 
 interface StopsTable {
@@ -10,6 +11,8 @@ interface StopsTable {
 	route_count: number;
 	route_list: string[];
 }
+
+export type TBusStop = Selectable<StopsTable>;
 
 export interface KyselyDatabase {
 	stops: StopsTable;

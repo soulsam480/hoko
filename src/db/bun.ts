@@ -9,7 +9,7 @@ import { KyselyDatabase } from "./schema";
 
 const bunKysely = new Kysely<KyselyDatabase>({
 	dialect: new BunSqliteDialect({
-		database: new Database("hoko-db.sqlite"),
+		database: new Database("public/hoko-db.sqlite"),
 	}),
 });
 
