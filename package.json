@@ -1,0 +1,26 @@
+{
+	"name": "my-app",
+	"type": "module",
+	"scripts": {
+		"dev:api": "bun run --hot src/server.ts",
+		"dev:app": "vite dev",
+		"kysely": "kysely"
+	},
+	"dependencies": {
+		"@preact/signals": "^2.0.0",
+		"hono": "^4.6.14",
+		"kysely": "^0.27.5",
+		"kysely-bun-sqlite": "^0.3.2",
+		"leaflet": "^1.9.4",
+		"sql.js": "^1.12.0"
+	},
+	"devDependencies": {
+		"@preact/preset-vite": "^2.9.3",
+		"@types/bun": "latest",
+		"@types/leaflet": "^1.9.15",
+		"@types/sql.js": "^1.4.9",
+		"kysely-ctl": "^0.10.1",
+		"vite": "^6.0.5",
+		"vite-plugin-pwa": "^0.21.1"
+	}
+}
