@@ -1,4 +1,4 @@
-export function getUserId(): string {
+function getUserId(): string {
   let id = localStorage.getItem('user_id')
 
   if (id !== null) {
@@ -11,3 +11,5 @@ export function getUserId(): string {
 
   return id
 }
+
+export const USER_ID = getUserId()

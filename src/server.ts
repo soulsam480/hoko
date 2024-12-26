@@ -2,25 +2,58 @@ import { Hono } from 'hono'
 import { createBunWebSocket } from 'hono/bun'
 import type { ServerWebSocket } from 'bun'
 import { WSContext, WSMessageReceive } from 'hono/ws'
+import {
+  IConsumer,
+  IConnectionRequest,
+  IInsideBusRequest,
+  ITrackingRequest,
+  IFeederPingRequest,
+  IConnectionResponse,
+  ITrackingResponse,
+  ISubscriberPongResponse,
+  IConsumerDisconnectedResponse,
+  IErrorResponse,
+  ITrackingDisconnectionRequest
+} from './messages'
 
 const { upgradeWebSocket, websocket } = createBunWebSocket<ServerWebSocket>()
+
+// TODO: try using ip for tracking ?
 
 const socketMap = new Map<string, WSContext<ServerWebSocket>>()
 const consumers = new Map<string, IConsumer>()
 
+// NOTE: ------------------ utils ----------------
+
 function serializeMessage(
   message: MessageEvent<WSMessageReceive>
-): IConnectionRequest | IInsideBusRequest | ITrackingRequest | IPingRequest {
-  return JSON.parse(message.data.toString())
+):
+  | IConnectionRequest
+  | IInsideBusRequest
+  | ITrackingRequest
+  | IFeederPingRequest
+  | ITrackingDisconnectionRequest {
+  const data = JSON.parse(message.data.toString())
+
+  if (!('type' in data)) {
+    throw new Error('Bad request')
+  }
+
+  return data
 }
 
 function packMessage(
-  message: IConnectionReponse | ITrackingResponse | ITrackingPingResponse
+  message:
+    | IConnectionResponse
+    | ITrackingResponse
+    | ISubscriberPongResponse
+    | IConsumerDisconnectedResponse
+    | IErrorResponse
 ) {
   return JSON.stringify(message)
 }
 
-function findFeeders(consumer: IConsumer): IConsumer[] {
+function findTrackableFeeders(consumer: IConsumer): IConsumer[] {
   const result: IConsumer[] = []
 
   consumers.forEach(item => {
@@ -37,72 +70,22 @@ function findFeeders(consumer: IConsumer): IConsumer[] {
   return result
 }
 
-const app = new Hono()
+function notifySubscribers(
+  feeder: IConsumer,
+  iter: (sub: string) => Parameters<typeof packMessage>[0]
+) {
+  feeder.subscribers.forEach(sub => {
+    const socket = socketMap.get(sub)
 
-interface IConsumer {
-  id: string
-  inside_bus: boolean
-  route_id: string
-  stop_id: number
-  coordinates?: [lat: number, lng: number]
-  subscribers: string[]
+    if (socket === undefined) {
+      return
+    }
+
+    socket.send(packMessage(iter(sub)))
+  })
 }
 
-interface IConsumableFeeder {
-  id: string
-  coordinates: [lat: number, lng: number]
-}
-
-interface ITrackingResponse {
-  type: 'tracking_suc'
-  feeder_id: string
-  route_id: string
-  stop_id: number
-  coordinates: [lat: number, lng: number]
-}
-
-interface IConnectionReponse {
-  type: 'connection_suc'
-  route_id: string
-  stop_id: number
-  // TODO: think if we need id for consumers
-  feeders: Array<IConsumableFeeder>
-}
-
-interface IConnectionRequest {
-  type: 'connection'
-  id: string
-  route_id: string
-  stop_id: number
-  inside_bus: boolean
-}
-
-interface IInsideBusRequest {
-  type: 'inside_bus'
-  id: string
-  inside_bus: boolean
-}
-
-interface ITrackingRequest {
-  type: 'tracking'
-  id: string
-  feeder_id: string
-  route_id: string
-  stop_id: number
-}
-
-interface IPingRequest {
-  type: 'ping'
-  id: string
-  coordinates: [lat: number, lng: number]
-}
-
-interface ITrackingPingResponse {
-  type: 'pong'
-  id: string
-  feeder_id: string
-  coordinates: [lat: number, lng: number]
-}
+// NOTE: ------------------ Handlers ----------------
 
 function registerConsumer(
   ws: WSContext<ServerWebSocket>,
@@ -110,7 +93,12 @@ function registerConsumer(
 ) {
   try {
     if (data.id === undefined || socketMap.has(data.id)) {
-      ws.send(JSON.stringify({ ev: 'c_err' }))
+      ws.send(
+        packMessage({
+          type: 'err',
+          message: 'bad_req'
+        })
+      )
 
       return
     }
@@ -120,17 +108,19 @@ function registerConsumer(
       inside_bus: data.inside_bus,
       route_id: data.route_id,
       stop_id: data.stop_id,
-      subscribers: []
+      subscribers: new Set(),
+      coordinates: data.coordinates
     }
 
     socketMap.set(data.id, ws)
     consumers.set(data.id, consumer)
 
-    const feeders = findFeeders(consumer)
+    const feeders = findTrackableFeeders(consumer)
 
     ws.send(
       packMessage({
-        type: 'connection_suc',
+        type: 'c_s',
+        id: consumer.id,
         feeders: feeders.map(it => ({
           id: it.id,
           coordinates: it.coordinates as NonNullable<IConsumer['coordinates']>
@@ -139,8 +129,20 @@ function registerConsumer(
         stop_id: consumer.stop_id
       })
     )
+
+    if (data.feeder_id) {
+      trackFeeder(ws, {
+        feeder_id: data.feeder_id,
+        id: data.id,
+        route_id: data.route_id,
+        stop_id: data.stop_id,
+        type: 't'
+      })
+    }
+
+    console.log('[HOKO]: ', data.id, ' connected!')
   } catch (error) {
-    ws.send(JSON.stringify({ ev: 'c_err' }))
+    ws.send(packMessage({ type: 'err', message: 'no_reg' }))
   }
 }
 
@@ -151,6 +153,12 @@ function updateInsideBus(
   const consumer = consumers.get(data.id)
 
   if (consumer === undefined) {
+    ws.send(
+      packMessage({
+        type: 'err',
+        message: 'bad_req'
+      })
+    )
     return
   }
 
@@ -161,19 +169,33 @@ function updateInsideBus(
 
 function trackFeeder(ws: WSContext<ServerWebSocket>, data: ITrackingRequest) {
   const feeder = consumers.get(data.feeder_id)
+  const sub = consumers.get(data.id)
 
-  if (feeder === undefined) {
-    // TODO: handle error
+  if (
+    feeder === undefined ||
+    sub === undefined ||
+    // already subscribed
+    feeder.subscribers.has(data.id) ||
+    // feeder is subscriber of sub
+    sub.subscribers.has(data.feeder_id)
+  ) {
+    ws.send(
+      packMessage({
+        type: 'err',
+        message: 'bad_req'
+      })
+    )
     return
   }
 
-  feeder.subscribers.push(data.id)
+  feeder.subscribers.add(data.id)
 
   consumers.set(data.feeder_id, feeder)
 
   ws.send(
     packMessage({
-      type: 'tracking_suc',
+      type: 't_s',
+      id: data.id,
       coordinates: feeder.coordinates as NonNullable<IConsumer['coordinates']>,
       feeder_id: data.feeder_id,
       route_id: data.route_id,
@@ -184,36 +206,92 @@ function trackFeeder(ws: WSContext<ServerWebSocket>, data: ITrackingRequest) {
 
 function updatePingAndBroadcast(
   ws: WSContext<ServerWebSocket>,
-  data: IPingRequest
+  data: IFeederPingRequest
 ) {
   const feeder = consumers.get(data.id)
 
-  if (feeder === undefined) {
-    //TODO: handle errors
+  if (feeder === undefined || !feeder.inside_bus) {
+    ws.send(
+      packMessage({
+        type: 'err',
+        message: 'bad_req'
+      })
+    )
     return
   }
 
   feeder.coordinates = data.coordinates
 
-  feeder.subscribers.forEach(sub => {
-    const socket = socketMap.get(sub)
+  consumers.set(feeder.id, feeder)
 
-    if (socket === undefined) {
-      return
+  notifySubscribers(feeder, sub => {
+    return {
+      type: 't_po',
+      coordinates: feeder.coordinates as NonNullable<IConsumer['coordinates']>,
+      feeder_id: feeder.id,
+      id: sub
     }
-
-    socket.send(
-      packMessage({
-        type: 'pong',
-        coordinates: feeder.coordinates as NonNullable<
-          IConsumer['coordinates']
-        >,
-        feeder_id: feeder.id,
-        id: sub
-      })
-    )
   })
 }
+
+function removeConsumer(id: string) {
+  const consumer = consumers.get(id)
+
+  if (consumer === undefined) return
+
+  consumers.delete(id)
+  socketMap.delete(id)
+
+  consumers.values().forEach(con => {
+    if (con.subscribers.has(id)) {
+      con.subscribers.delete(id)
+      consumers.set(con.id, con)
+    }
+  })
+
+  notifySubscribers(consumer, sub => {
+    return {
+      type: 'dis',
+      feeder_id: consumer.id,
+      id: sub
+    }
+  })
+}
+
+function cleanupStaleSockets() {
+  for (const socket of socketMap.entries()) {
+    if (socket[1].readyState === 3) {
+      removeConsumer(socket[0])
+    }
+  }
+}
+
+function disconnectTracking(
+  ws: WSContext<ServerWebSocket>,
+  data: ITrackingDisconnectionRequest
+) {
+  const feeder = consumers.get(data.feeder_id)
+
+  if (feeder === undefined) {
+    ws.send(
+      packMessage({
+        type: 'err',
+        message: 'bad_req'
+      })
+    )
+
+    return
+  }
+
+  feeder.subscribers.delete(data.id)
+  consumers.set(feeder.id, feeder)
+}
+
+const app = new Hono()
+
+// TODO: 1. cors
+// 2. add check for token some sort of
+// 3. don't allow further conn with no regis
 
 app
   .get('/api/health', c => {
@@ -222,31 +300,59 @@ app
   .get(
     '/api/ws',
     upgradeWebSocket(() => {
+      let consumerId: string | null = null
+
       return {
         onMessage(event, ws) {
-          const data = serializeMessage(event)
+          try {
+            const data = serializeMessage(event)
 
-          switch (data.type) {
-            case 'connection':
-              registerConsumer(ws, data)
-              break
+            switch (data.type) {
+              case 'c':
+                registerConsumer(ws, data)
+                consumerId = data.id
+                break
 
-            case 'tracking':
-              trackFeeder(ws, data)
-              break
+              case 't':
+                trackFeeder(ws, data)
+                break
 
-            case 'inside_bus':
-              updateInsideBus(ws, data)
-              break
+              case 'i_b':
+                updateInsideBus(ws, data)
+                break
 
-            case 'ping':
-              updatePingAndBroadcast(ws, data)
+              case 't_pi':
+                updatePingAndBroadcast(ws, data)
+                break
+
+              case 't_dis':
+                disconnectTracking(ws, data)
+                break
+
+              default:
+                ws.send(
+                  packMessage({
+                    type: 'err',
+                    message: 'bad_req'
+                  })
+                )
+            }
+          } catch (_) {
+            ws.send(
+              packMessage({
+                type: 'err',
+                message: 'bad_req'
+              })
+            )
           }
-
-          ws.send('Hello from server!')
         },
         onClose: () => {
-          console.log('Connection closed')
+          if (consumerId === null) return
+
+          removeConsumer(consumerId)
+          cleanupStaleSockets()
+
+          console.info('[HOKO]: ', consumerId, ' disconnected.')
         }
       }
     })
