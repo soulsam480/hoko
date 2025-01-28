@@ -1,10 +1,10 @@
 export interface IConsumer {
   id: string
   inside_bus: boolean
-  route_id: string
-  stop_id: number
+  route_id: string | null
+  stop_id: number | null
   coordinates: [lat: number, lng: number]
-  subscribers: Set<string>
+  subs: Set<string>
 }
 
 export interface IConsumableFeeder {
@@ -15,8 +15,8 @@ export interface IConsumableFeeder {
 export interface IConnectionRequest {
   type: 'c'
   id: string
-  route_id: string
-  stop_id: number
+  route_id: string | null
+  stop_id: number | null
   inside_bus: boolean
   coordinates: [lat: number, lng: number]
   feeder_id: string | null
@@ -25,8 +25,6 @@ export interface IConnectionRequest {
 export interface IConnectionResponse {
   type: 'c_s'
   id: string
-  route_id: string
-  stop_id: number
   feeders: Array<IConsumableFeeder>
 }
 
@@ -42,8 +40,6 @@ export interface ITrackingResponse {
   type: 't_s'
   id: string
   feeder_id: string
-  route_id: string
-  stop_id: number
   coordinates: [lat: number, lng: number]
 }
 
