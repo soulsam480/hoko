@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev:api": "bun run --hot src/server/index.ts",
-    "dev:app": "vite dev",
+    "dev:app": "vite dev --host",
     "dev": "bun run dev:api & bun run dev:app",
     "build:app": "vite build",
     "kysely": "kysely"
@@ -26,6 +26,7 @@
     "@svgr/plugin-jsx": "^8.1.0",
     "@types/bun": "latest",
     "@types/leaflet": "^1.9.15",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "autoprefixer": "^10.4.20",
     "kysely-ctl": "^0.10.1",
     "lightningcss": "^1.28.2",

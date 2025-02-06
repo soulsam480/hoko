@@ -47,17 +47,22 @@ app
 
               case 'i_b':
                 client = Client.find(data.id, ws)
-                client?.setInsideBus(data.inside_bus)
+                client.setInsideBus(data.inside_bus)
                 break
 
               case 't_pi':
                 client = Client.find(data.id, ws)
-                client?.setCoordinates(data.coordinates)
+                client.setCoordinates(data.coordinates)
                 break
 
               case 't_dis':
                 client = Client.find(data.id, ws)
                 Client.untrack(data.feeder_id, client)
+                break
+
+              case 'f':
+                client = Client.find(data.id, ws)
+                client.findFeeders(data)
                 break
 
               default:

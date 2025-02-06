@@ -1,13 +1,7 @@
 import { useSignal } from '@preact/signals'
 import GisPoisO from '~icons/gis/pois-o'
-import {
-  chosenRoute,
-  chosenStop,
-  closestStops,
-  insideBus,
-  trackingMeta
-} from '../stores'
-import { register, updateInside } from '../../ws'
+import { chosenRoute, chosenStop, closestStops, insideBus } from '../stores'
+import { connection } from '../connection'
 
 export function Controls() {
   const openControls = useSignal(true)
@@ -91,7 +85,7 @@ export function Controls() {
                             return
                           }
 
-                          register(chosenStop.value?.id, route)
+                          connection.findFeeders(chosenStop.value?.id, route)
                         }}
                       >
                         {route}
@@ -127,26 +121,21 @@ export function Controls() {
                   type='checkbox'
                   checked={insideBus.value}
                   onChange={() => {
-                    updateInside(!insideBus.value)
+                    connection.updateInsideBus(!insideBus.value)
                     insideBus.value = !insideBus.value
                   }}
                 />
               </label>
 
               <ul class='grid grid-cols-2 gap-x-1 max-h-[calc(100vh_/_3)] overflow-y-scroll'>
-                {trackingMeta.value?.feeders.map(feeder => {
+                {connection.feeders.value.map(feeder => {
                   return (
                     <li class='text-xs' key={feeder}>
                       <button
                         class='p-1 hover:bg-cyan-100 rounded w-full text-start'
                         type='button'
                         onClick={() => {
-                          //
-                          // if (chosenStop.value === null) {
-                          //   return
-                          // }
-                          //
-                          // register(chosenStop.value?.id, route)
+                          connection.track(feeder.id)
                         }}
                       >
                         {feeder.id}

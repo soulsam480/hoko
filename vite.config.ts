@@ -2,6 +2,7 @@ import { defineConfig, Plugin } from 'vite'
 import preact from '@preact/preset-vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import Icons from 'unplugin-icons/vite'
+import BasicSsl from '@vitejs/plugin-basic-ssl'
 
 function SQLiteDevPlugin(): Plugin {
   return {
@@ -18,6 +19,7 @@ function SQLiteDevPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [
+    BasicSsl(),
     preact(),
     SQLiteDevPlugin(),
     Icons({

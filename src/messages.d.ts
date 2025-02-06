@@ -78,3 +78,15 @@ export interface IErrorResponse {
   type: 'err'
   message: string
 }
+
+export interface IFindFeedersRequest {
+  type: 'f'
+  id: string
+  stop_id: number
+  route_id: string
+}
+
+export interface IFindFeedersResponse {
+  type: 'f_s'
+  feeders: Array<IConsumableFeeder>
+}

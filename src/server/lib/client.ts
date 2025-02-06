@@ -8,7 +8,9 @@ import {
   IConsumerDisconnectedResponse,
   IErrorResponse,
   IConnectionRequest,
-  IConsumer
+  IConsumer,
+  IFindFeedersResponse,
+  IFindFeedersRequest
 } from '../../messages'
 import { packMessage } from './transport'
 import { globalBus } from './bus'
@@ -34,9 +36,14 @@ type ClientEvents = {
 
 export class Client {
   static create(ws: WSContext<ServerWebSocket>, req: IConnectionRequest) {
-    const client = new Client(req.id, ws, req.inside_bus, req.coordinates)
+    const client = new Client(req.id, ws, req.coordinates)
 
     clients.set(req.id, client)
+
+    if (req.feeder_id !== null) {
+      Client.track(req.feeder_id, client)
+    }
+
     return client
   }
 
@@ -56,12 +63,12 @@ export class Client {
   static track(id: string, client: Client) {
     const feeder = Client.find(id, client.ws)
 
-    feeder.subscribe(client)
+    feeder.addSub(client)
   }
 
   static untrack(id: string, client: Client) {
     const feeder = Client.find(id, client.ws)
-    feeder.unsubscribe(client)
+    feeder.removeSub(client)
   }
 
   static findTrackableFeeders(client: Client): Client[] {
@@ -80,26 +87,42 @@ export class Client {
 
   #bus = mitt<ClientEvents>()
 
-  inside_bus: boolean
+  inside_bus = false
   coordinates: [lat: number, lng: number]
   route_id: string | null = null
-  stop_id: string | null = null
+  stop_id: number | null = null
 
   constructor(
     readonly id: string,
     readonly ws: WSContext<ServerWebSocket>,
-    inside_bus: boolean,
     coordinates: [lat: number, lng: number]
   ) {
-    this.inside_bus = inside_bus
     this.coordinates = coordinates
 
-    // globalBus.on('update:registry', this.sendUpdateRegistry.bind(this))
+    this.sendConnectionSuccess()
+  }
+
+  private get selfChannel() {
+    if (this.route_id === null || !this.inside_bus) {
+      return null
+    }
+
+    return this.route_id
+  }
+
+  private updateChannel() {
+    if (this.selfChannel === null) {
+      return
+    }
+
+    // @ts-expect-error this is dynamic
+    globalBus.emit(this.selfChannel, this)
   }
 
   isTrackable(sub: Client) {
     return (
       this.inside_bus &&
+      sub.route_id !== null &&
       this.route_id === sub.route_id &&
       !this.subs.has(sub) &&
       !sub.subs.has(this)
@@ -109,22 +132,22 @@ export class Client {
   setInsideBus(inside_bus: boolean) {
     this.inside_bus = inside_bus
 
-    globalBus.emit('update:registry', this)
+    this.updateChannel()
   }
 
   setCoordinates(coordinates: [lat: number, lng: number]) {
     this.coordinates = coordinates
 
     this.#bus.emit('update:tracking', this.coordinates)
-    globalBus.emit('update:registry', this)
+    this.updateChannel()
   }
 
-  setParams(stop_id: string, route_id: string) {
+  setParams(stop_id: number, route_id: string) {
     this.stop_id = stop_id
     this.route_id = route_id
   }
 
-  subscribe(client: Client) {
+  addSub(client: Client) {
     this.subs.add(client)
 
     const handler = (pos: [lat: number, lng: number]) => {
@@ -142,7 +165,7 @@ export class Client {
     client.sendSubscriptionSuccess(this, this.coordinates)
   }
 
-  unsubscribe(client: Client) {
+  removeSub(client: Client) {
     this.subs.delete(client)
   }
 
@@ -163,6 +186,7 @@ export class Client {
       | ISubscriberPongResponse
       | IConsumerDisconnectedResponse
       | IErrorResponse
+      | IFindFeedersResponse
   ) {
     if (this.ws.readyState === 3) {
       return
@@ -180,6 +204,22 @@ export class Client {
         coordinates: it.coordinates as NonNullable<IConsumer['coordinates']>
       }))
     })
+
+    this.updateChannel()
+  }
+
+  findFeeders({ stop_id, route_id }: IFindFeedersRequest) {
+    this.setParams(stop_id, route_id)
+
+    this.send({
+      type: 'f_s',
+      feeders: Client.findTrackableFeeders(this).map(it => ({
+        id: it.id,
+        coordinates: it.coordinates as NonNullable<IConsumer['coordinates']>
+      }))
+    })
+
+    // TODO: setup auto subscriptions for current state
   }
 
   sendSubscriptionSuccess(feeder: Client, pos: IConsumer['coordinates']) {

@@ -11,7 +11,9 @@ import {
   ITrackingResponse,
   ISubscriberPongResponse,
   IConsumerDisconnectedResponse,
-  IErrorResponse
+  IErrorResponse,
+  IFindFeedersRequest,
+  IFindFeedersResponse
 } from '../../messages'
 
 export function unpackMessage(
@@ -21,7 +23,8 @@ export function unpackMessage(
   | IInsideBusRequest
   | ITrackingRequest
   | IFeederPingRequest
-  | ITrackingDisconnectionRequest {
+  | ITrackingDisconnectionRequest
+  | IFindFeedersRequest {
   const data = JSON.parse(message.data.toString())
 
   if (!('type' in data)) {
@@ -38,6 +41,7 @@ export function packMessage(
     | ISubscriberPongResponse
     | IConsumerDisconnectedResponse
     | IErrorResponse
+    | IFindFeedersResponse
 ) {
   return JSON.stringify(message)
 }
