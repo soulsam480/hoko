@@ -5,8 +5,8 @@ import { isInitializingDatabase } from './ui/stores'
 import { render } from 'preact'
 import { App } from './App'
 import { registerSW } from 'virtual:pwa-register'
-import { startGPS } from './geo/pos'
-import { renderMap } from './geo/map'
+import { renderMap } from './ui/geo/map'
+import { startGPS } from './ui/geo/pos'
 
 isReady().then(async () => {
   isInitializingDatabase.value = true

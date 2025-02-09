@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@iconify-json/carbon": "^1.2.6",
     "@iconify-json/gis": "^1.2.2",
     "@preact/preset-vite": "^2.9.3",
     "@svgr/core": "^8.1.0",

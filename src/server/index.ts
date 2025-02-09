@@ -91,5 +91,10 @@ app
 
 export default {
   fetch: app.fetch,
-  websocket
+  websocket,
+  hostname: '192.168.0.107',
+  tls: {
+    cert: Bun.file('zorodev.test+4.pem'),
+    key: Bun.file('zorodev.test+4-key.pem')
+  }
 }

@@ -1,6 +1,6 @@
-import { gpsSignal } from '../ui/stores'
 import * as L from 'leaflet'
 import { getMyMarket as getMyMarker, setMyMarker } from './map'
+import { gpsSignal } from '../stores'
 
 const options: PositionOptions = {
   enableHighAccuracy: true,

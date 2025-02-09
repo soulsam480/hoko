@@ -1,11 +1,10 @@
 import { effect } from '@preact/signals'
 import * as L from 'leaflet'
-import { isReady } from '../db/browser'
-import { getClosestStops } from '../db/browser/queries'
-import { IConsumableFeeder } from '../messages'
-import { closestStops, gpsSignal } from '../ui/stores'
-import { connection } from '../ui/connection'
-
+import { isReady } from '../../db/browser'
+import { getClosestStops } from '../../db/browser/queries'
+import { IConsumableFeeder } from '../../messages'
+import { connection } from '../connection'
+import { gpsSignal, closestStops } from '../stores'
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
 

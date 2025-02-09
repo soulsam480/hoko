@@ -9,6 +9,7 @@ import {
   IFindFeedersResponse,
   IInsideBusRequest,
   ISubscriberPongResponse,
+  ITrackingDisconnectionRequest,
   ITrackingRequest,
   ITrackingResponse
 } from '../messages'
@@ -209,6 +210,21 @@ class Connection {
       feeder_coords: e.coordinates,
       state: 'tracking',
       started_at: new Date()
+    })
+  }
+
+  untrack() {
+    this.ws.json({
+      type: 't_dis',
+      feeder_id: this.trackingState.peek().feeder_id!,
+      id: USER_ID
+    } satisfies ITrackingDisconnectionRequest)
+
+    updatePartial(this.trackingState)({
+      state: 'idle',
+      feeder_id: null,
+      started_at: null,
+      feeder_coords: null
     })
   }
 
