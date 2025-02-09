@@ -31,6 +31,6 @@ Experimental community BMTC bus tracking app which aims to be accurate in tracki
 
 ## Early screenshots
 ![image](https://github.com/user-attachments/assets/a2565e68-fc7a-4bb1-9437-7f9898bb8a9b)
-![image](https://github.com/user-attachments/assets/47239010-ead2-472f-9a91-53830934a88a)
-![image](https://github.com/user-attachments/assets/c04827e8-fc56-4d64-a8e5-7b0aa15157ae)
-
+![image](https://github.com/user-attachments/assets/63473e8b-cc46-4979-a09d-6bae0c970951)
+![image](https://github.com/user-attachments/assets/a13c4db3-9720-4968-8ec4-afdd74e85e4a)
+![image](https://github.com/user-attachments/assets/5916564a-88e3-4cc4-824b-7371ba7814be)
