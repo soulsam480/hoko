@@ -6,6 +6,7 @@ import { suspendFn } from '../suspense-utils'
 import { BackButton } from './backButton'
 
 import { Suspense } from 'preact/compat'
+import { Object } from './object'
 
 interface ISearchedProps {
   term: string
@@ -22,7 +23,7 @@ function List({ routes }: IListProps) {
         return (
           <li class='text-xs' key={`${route}__${id}`}>
             <button
-              class='p-1 hover:bg-cyan-100 rounded w-full text-start'
+              class='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
               type='button'
               onClick={() => {
                 chosenRoute.value = route
@@ -60,19 +61,20 @@ export function RouteList() {
 
   return (
     <div className='flex flex-col gap-2'>
-      <div className='text-xs mb-1 flex gap-2 justify-between'>
+      <div className='flex gap-2'>
         <BackButton
           onClick={() => {
             chosenStop.value = null
             chosenRoute.value = null
+
+            connection.resetFeeders()
           }}
         />
 
-        <div>
-          Select a route from{' '}
-          <span className='font-semibold'>{chosenStop.value.name}</span> to
-          track
-        </div>
+        <Object
+          title={chosenStop.value!.name}
+          description='Choose a route to track'
+        />
       </div>
 
       <input
@@ -82,7 +84,7 @@ export function RouteList() {
       />
 
       {term.value.length > 0 && (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div>Searching...</div>}>
           <SearchedList term={term.value} />
         </Suspense>
       )}

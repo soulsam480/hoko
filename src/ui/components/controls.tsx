@@ -19,7 +19,7 @@ export function Controls() {
       </button>
 
       {openControls.value && (
-        <div className='max-w-[100vw_-_32px] rounded-lg flex flex-col gap-2 p-2 bg-cyan-50 border-cyan-200 border shadow-md'>
+        <div className='max-w-[400px] w-[400px] rounded-lg flex flex-col gap-2 p-2 bg-cyan-50 border-cyan-200 border shadow-md'>
           <StopList />
           <RouteList />
           <TrackingControls />

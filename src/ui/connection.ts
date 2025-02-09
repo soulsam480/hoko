@@ -214,11 +214,13 @@ class Connection {
   }
 
   untrack() {
-    this.ws.json({
-      type: 't_dis',
-      feeder_id: this.trackingState.peek().feeder_id!,
-      id: USER_ID
-    } satisfies ITrackingDisconnectionRequest)
+    if (this.trackingState.peek().feeder_id) {
+      this.ws.json({
+        type: 't_dis',
+        feeder_id: this.trackingState.peek().feeder_id!,
+        id: USER_ID
+      } satisfies ITrackingDisconnectionRequest)
+    }
 
     updatePartial(this.trackingState)({
       state: 'idle',
@@ -286,6 +288,12 @@ class Connection {
 
     // NOTE: as the user is inside bus, we can keep the tracking their feeder but we can ignore the pongs received
     // i.e. we don't need to update the feeder position
+  }
+
+  resetFeeders() {
+    updatePartial(this.connectionState)({
+      feeders: []
+    })
   }
 }
 

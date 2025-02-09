@@ -75,11 +75,11 @@ function syncMarkers(feeders: IConsumableFeeder[]) {
     return
   }
 
-  feederMarkers.keys().forEach(it => {
+  feederMarkers.entries().forEach(([it, mark]) => {
     if (!feeders.find(item => it !== item.id)) {
-      const mark = feederMarkers.get(it)
-      feederMarkers.delete(it)
       mark?.remove()
+
+      feederMarkers.delete(it)
     }
   })
 
@@ -89,6 +89,8 @@ function syncMarkers(feeders: IConsumableFeeder[]) {
     if (!marker) {
       marker = L.marker(feeder.coordinates, { title: feeder.id })
       marker.addTo(map)
+
+      feederMarkers.set(feeder.id, marker)
     }
 
     marker.setLatLng(feeder.coordinates)

@@ -1,10 +1,11 @@
 import { connection } from '../connection'
 import { Object } from './object'
+import GisSearchPoi from '~icons/gis/search-poi'
 
 export function AvailableFeeders() {
   return (
     <div className='flex flex-col gap-1'>
-      <Object title='Showing available feeders' />
+      <Object title='Showing available feeders' icon={GisSearchPoi} />
 
       {connection.feeders.value.length === 0 && (
         <div class='text-xs text-c'>
@@ -12,12 +13,12 @@ export function AvailableFeeders() {
         </div>
       )}
 
-      <ul class='grid grid-cols-2 gap-x-1 max-h-[calc(100vh_/_3)] overflow-y-scroll empty:hidden'>
+      <ul class='flex flex-col max-h-[calc(100vh_/_3)] overflow-y-scroll empty:hidden'>
         {connection.feeders.value.map(feeder => {
           return (
             <li class='text-xs' key={feeder}>
               <button
-                class='p-1 hover:bg-cyan-100 rounded w-full text-start'
+                class='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
                 type='button'
                 onClick={() => {
                   connection.track(feeder.id)
