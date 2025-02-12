@@ -83,15 +83,9 @@ export function RouteList() {
         onInput={e => (term.value = e.currentTarget.value)}
       />
 
-      {term.value.length > 0 && (
-        <Suspense fallback={<div>Searching...</div>}>
-          <SearchedList term={term.value} />
-        </Suspense>
-      )}
-
-      {term.value.length === 0 && (
-        <List routes={chosenStop.value?.route_list} />
-      )}
+      <Suspense fallback={<div>Searching...</div>}>
+        <SearchedList term={term.value} />
+      </Suspense>
     </div>
   )
 }

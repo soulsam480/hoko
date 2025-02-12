@@ -9,7 +9,7 @@ export async function getClosestStops(coords: GeolocationCoordinates) {
     1
   )
 
-  const stops = await sql`SELECT *
+  const stops = await sql`SELECT id,lat,long,name
 FROM stops
 WHERE lat BETWEEN ${minLat} AND ${maxLat}
   AND long BETWEEN ${minLon} AND ${maxLon}`
@@ -21,6 +21,15 @@ export async function getSearchedRoutes(
   id: number,
   term: string
 ): Promise<string[]> {
+  if (term.length === 0) {
+    const routes = await sql`
+    SELECT route_list
+    FROM stops
+    WHERE stops.id = ${id};
+`
+    return routes.map(serializeStop).map(it => it.route_list)[0]
+  }
+
   const searchTerm = `%${term}%`
 
   const routes = await sql`

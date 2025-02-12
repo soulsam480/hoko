@@ -2,7 +2,7 @@
   "name": "my-app",
   "type": "module",
   "scripts": {
-    "dev:api": "bun run --hot src/server/index.ts",
+    "dev:api": "NODE_ENV=development bun run --hot src/server/index.ts",
     "dev:app": "vite dev --host",
     "dev": "bun run dev:api & bun run dev:app",
     "build:app": "vite build",

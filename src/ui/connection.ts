@@ -13,10 +13,11 @@ import {
   ITrackingRequest,
   ITrackingResponse
 } from '../messages'
-import { chosenRoute, chosenStop, gpsSignal, insideBus } from './stores'
+import { gpsSignal, insideBus } from './stores'
 import { USER_ID } from './userId'
 import { computed, signal } from '@preact/signals'
 import { updatePartial } from './store-utils'
+import { persistedSignal } from './persisted-signal'
 
 interface ITrackingState {
   state: 'requested' | 'tracking' | 'idle'
@@ -62,8 +63,10 @@ class Connection {
   }
 
   readonly ws: Sockette
-  readonly trackingState = signal<ITrackingState>(
-    Connection.defaultTrackingState()
+
+  readonly trackingState = persistedSignal<ITrackingState>(
+    Connection.defaultTrackingState(),
+    'tracking'
   )
 
   readonly connectionState = signal<IConnectionState>({
@@ -152,7 +155,26 @@ class Connection {
     return this.connectionState.peek().state
   }
 
-  // TODO: we need to build restore tracking when reconnection happens
+  get routeId() {
+    return this.trackingState.peek().route_id
+  }
+
+  get stopId() {
+    return this.trackingState.peek().stop_id
+  }
+
+  get feederId() {
+    return this.trackingState.peek().feeder_id
+  }
+
+  isTrackingFeeder(feederId: string) {
+    return this.feederId === feederId
+  }
+
+  get isTrackingInProgress() {
+    return this.trackingState.peek().state === 'tracking'
+  }
+
   private connect() {
     if (gpsSignal.value === null || this.state() === 'connected') return
 
@@ -162,10 +184,10 @@ class Connection {
       coordinates: [latitude, longitude],
       id: USER_ID,
       inside_bus: insideBus.value,
-      route_id: chosenRoute.peek(),
-      stop_id: chosenStop.peek()?.id || null,
+      route_id: this.routeId,
+      stop_id: this.stopId,
       type: 'c',
-      feeder_id: null
+      feeder_id: this.feederId
     }
 
     this.ws.json(connPayload)
@@ -207,6 +229,7 @@ class Connection {
 
   private onTrackingSuccess(e: ITrackingResponse) {
     updatePartial(this.trackingState)({
+      feeder_id: e.feeder_id,
       feeder_coords: e.coordinates,
       state: 'tracking',
       started_at: new Date()

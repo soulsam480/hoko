@@ -3,6 +3,7 @@ import { createBunWebSocket } from 'hono/bun'
 import type { ServerWebSocket } from 'bun'
 import { Client, ClientError, clients } from './lib/client'
 import { unpackMessage } from './lib/transport'
+import { cors } from 'hono/cors'
 
 const { upgradeWebSocket, websocket } = createBunWebSocket<ServerWebSocket>()
 
@@ -21,6 +22,14 @@ const app = new Hono()
 // 3. don't allow further conn with no regis
 
 app
+  .use(
+    cors({
+      origin:
+        import.meta.env.NODE_ENV === 'development'
+          ? []
+          : ['https://hoko.sambitsahoo.com']
+    })
+  )
   .get('/api/health', c => {
     return c.text('OK')
   })

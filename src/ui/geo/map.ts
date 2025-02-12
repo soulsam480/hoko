@@ -2,7 +2,6 @@ import { effect } from '@preact/signals'
 import * as L from 'leaflet'
 import { isReady } from '../../db/browser'
 import { getClosestStops } from '../../db/browser/queries'
-import { IConsumableFeeder } from '../../messages'
 import { connection } from '../connection'
 import { gpsSignal, closestStops } from '../stores'
 let myMarker: L.Marker | null = null
@@ -17,10 +16,8 @@ export function getMyMarket() {
 }
 
 export function renderMap() {
-  // L.Icon.Default.imagePath = "img/icon/";
-
   map = L.map('app', {
-    // center bengaluru
+    // center Bangalore
     center: [12.9542802, 77.4661305],
     zoom: 12,
     zoomControl: true
@@ -43,7 +40,7 @@ export function renderMap() {
   effect(() => {
     const loc = gpsSignal.value
 
-    if (loc === null) {
+    if (loc === null || connection.isTrackingInProgress) {
       return
     }
 
@@ -70,7 +67,9 @@ export function renderMap() {
 
 const feederMarkers = new Map<string, L.Marker>()
 
-function syncMarkers(feeders: IConsumableFeeder[]) {
+effect(() => {
+  const feeders = connection.feeders.value
+
   if (map === null) {
     return
   }
@@ -88,6 +87,7 @@ function syncMarkers(feeders: IConsumableFeeder[]) {
 
     if (!marker) {
       marker = L.marker(feeder.coordinates, { title: feeder.id })
+
       marker.addTo(map)
 
       feederMarkers.set(feeder.id, marker)
@@ -95,8 +95,4 @@ function syncMarkers(feeders: IConsumableFeeder[]) {
 
     marker.setLatLng(feeder.coordinates)
   }
-}
-
-effect(() => {
-  syncMarkers(connection.feeders.value)
 })

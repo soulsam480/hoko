@@ -4,27 +4,36 @@ import { gpsSignal } from '../stores'
 
 const options: PositionOptions = {
   enableHighAccuracy: true,
-  // maximumAge: 30000,
   timeout: 27000
 }
 
-export function startGPS(map: L.Map) {
+function pingLoc(map: L.Map, fly = false) {
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
       if (getMyMarker() === null) {
         setMyMarker(L.marker([coords.latitude, coords.longitude]).addTo(map))
       }
 
-      map.zoomIn(5).flyTo({
-        lat: coords.latitude,
-        lng: coords.longitude
-      })
+      if (fly) {
+        map.zoomIn(5).flyTo({
+          lat: coords.latitude,
+          lng: coords.longitude
+        })
+      }
     },
     error => {
       console.log('ERROR', error)
     },
     options
   )
+}
+
+export function startGPS(map: L.Map) {
+  pingLoc(map, true)
+
+  window.setInterval(() => {
+    pingLoc(map)
+  }, 500)
 
   navigator.geolocation.watchPosition(
     ({ coords }) => {
