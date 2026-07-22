@@ -9,7 +9,8 @@
     "@preact/signals": "^2.0.0",
     "genosdb": "^0.22.1",
     "leaflet": "^1.9.4",
-    "mitt": "^3.0.1"
+    "mitt": "^3.0.1",
+    "sqlocal": "^0.18.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

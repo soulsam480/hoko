@@ -1,18 +1,20 @@
 import { useSignal } from '@preact/signals'
-import { connection } from '../connection'
+// import { connection } from '../connection'
 import { chosenRoute, chosenStop } from '../stores'
 import { suspendFn } from '../suspense-utils'
 import { BackButton } from './backButton'
 
 import { Suspense } from 'preact/compat'
 import { Object } from './object'
+import { getSearchedRoutes } from '../../db/quries'
+import { Route } from '../../db/schema'
 
 interface ISearchedProps {
   term: string
 }
 
 interface IListProps {
-  routes: string[]
+  routes: Route[]
 }
 
 function List({ routes }: IListProps) {
@@ -31,10 +33,10 @@ function List({ routes }: IListProps) {
                   return
                 }
 
-                connection.findFeeders(chosenStop.value?.id, route)
+                // connection.findFeeders(chosenStop.value?.id, route)
               }}
             >
-              {route}
+              {route.name}
             </button>
           </li>
         )
@@ -44,7 +46,7 @@ function List({ routes }: IListProps) {
 }
 
 function SearchedList({ term }: ISearchedProps) {
-  const fetcher = () => []
+  const fetcher = () => getSearchedRoutes(chosenStop.value!.id, term)
 
   const data = suspendFn(`routes-${chosenStop.value?.id}-${term}`, fetcher)()
 
@@ -66,7 +68,7 @@ export function RouteList() {
             chosenStop.value = null
             chosenRoute.value = null
 
-            connection.resetFeeders()
+            // connection.resetFeeders()
           }}
         />
 

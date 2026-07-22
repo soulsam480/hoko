@@ -1,4 +1,4 @@
-import { connection } from '../connection'
+// import { connection } from '../connection'
 import { chosenRoute, chosenStop, insideBus } from '../stores'
 import { BackButton } from './backButton'
 import { Object } from './object'
@@ -13,13 +13,13 @@ export function SelectedRouteControls() {
             insideBus.value = false
             chosenRoute.value = null
 
-            connection.untrack()
-            connection.resetFeeders()
+            // connection.untrack()
+            // connection.resetFeeders()
           }}
         />
         <Object
           label='Currently tracking'
-          title={chosenRoute.value || ''}
+          title={chosenRoute.value?.name || ''}
           description={`From: ${chosenStop.value!.name}`}
         />
       </div>
@@ -31,7 +31,7 @@ export function SelectedRouteControls() {
             type='checkbox'
             checked={insideBus.value}
             onChange={() => {
-              connection.updateInsideBus(!insideBus.value)
+              // connection.updateInsideBus(!insideBus.value)
               insideBus.value = !insideBus.value
             }}
           />

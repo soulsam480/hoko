@@ -1,11 +1,22 @@
-interface StopsTable {
-  lat: number
-  long: number
+interface Stop {
+  id: number
   name: string
-  trip_count: number
-  trip_list: string[]
-  route_count: number
-  route_list: string[]
+  lat: number
+  lon: number
 }
 
-export type TBusStop = StopsTable
+interface Route {
+  id: number
+  name: string
+  full_name: string
+  direction: number
+  start: string
+  stop: string
+}
+
+interface RouteToStop {
+  stop_id: number
+  route_id: number
+}
+
+export type { Stop, Route, RouteToStop }

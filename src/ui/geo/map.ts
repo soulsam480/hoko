@@ -1,11 +1,10 @@
 import { effect } from '@preact/signals'
 import * as L from 'leaflet'
-// import { getClosestStops } from '../../db/browser/queries'
+
 import { connection } from '../connection'
-import {
-  gpsSignal
-  // closestStops
-} from '../stores'
+import { closestStops, gpsSignal } from '../stores'
+import { getClosestStops } from '../../db/quries'
+import { isReady } from '../../db/client'
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
 
@@ -57,11 +56,11 @@ export function renderMap() {
       lng: longitude
     })
 
-    // isReady().then(() => {
-    //   getClosestStops(loc).then(res => {
-    //     closestStops.value = res
-    //   })
-    // })
+    isReady().then(() => {
+      getClosestStops(loc).then(res => {
+        closestStops.value = res
+      })
+    })
   })
 
   return { map, myMarker }
