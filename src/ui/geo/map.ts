@@ -2,7 +2,7 @@ import { effect } from '@preact/signals'
 import * as L from 'leaflet'
 
 import { connection } from '../connection'
-import { closestStops, gpsSignal } from '../stores'
+import { closestStops, gpsSignal, chosenStop } from '../stores'
 import { getClosestStops } from '../../db/quries'
 import { isReady } from '../../db/client'
 let myMarker: L.Marker | null = null
@@ -66,34 +66,37 @@ export function renderMap() {
   return { map, myMarker }
 }
 
-const feederMarkers = new Map<string, L.Marker>()
+const stopMarkers = new Map<number, L.CircleMarker>()
 
 effect(() => {
-  // const feeders = connection.feeders.value
-  //
-  // if (map === null) {
-  //   return
-  // }
-  //
-  // feederMarkers.entries().forEach(([it, mark]) => {
-  //   if (!feeders.find(item => it !== item.id)) {
-  //     mark?.remove()
-  //
-  //     feederMarkers.delete(it)
-  //   }
-  // })
-  //
-  // for (const feeder of feeders) {
-  //   let marker = feederMarkers.get(feeder.id)
-  //
-  //   if (!marker) {
-  //     marker = L.marker(feeder.coordinates, { title: feeder.id })
-  //
-  //     marker.addTo(map)
-  //
-  //     feederMarkers.set(feeder.id, marker)
-  //   }
-  //
-  //   marker.setLatLng(feeder.coordinates)
-  // }
+  const stops = closestStops.value
+  if (map === null) return
+
+  for (const [id, marker] of stopMarkers) {
+    if (!stops.find(s => s.id === id)) {
+      marker.remove()
+      stopMarkers.delete(id)
+    }
+  }
+
+  for (const stop of stops) {
+    let marker = stopMarkers.get(stop.id)
+    if (!marker) {
+      marker = L.circleMarker([stop.lat, stop.lon], {
+        radius: 7,
+        fillColor: '#ef4444',
+        color: '#ffffff',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(map)
+
+      marker.bindTooltip(stop.name, { direction: 'top' })
+      marker.on('click', () => {
+        chosenStop.value = stop
+      })
+
+      stopMarkers.set(stop.id, marker)
+    }
+    marker.setLatLng([stop.lat, stop.lon])
+  }
 })
