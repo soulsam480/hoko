@@ -58,7 +58,5 @@ fresh.
 - on page reload, smart revive checks GPS proximity to route stops before rejoining
 
 ## Early screenshots
-![image](https://github.com/user-attachments/assets/a2565e68-fc7a-4bb1-9437-7f9898bb8a9b)
-![image](https://github.com/user-attachments/assets/63473e8b-cc46-4979-a09d-6bae0c970951)
-![image](https://github.com/user-attachments/assets/a13c4db3-9720-4968-8ec4-afdd74e85e4a)
-![image](https://github.com/user-attachments/assets/5916564a-88e3-4cc4-824b-7371ba7814be)
+<img width="1470" height="874" alt="image" src="https://github.com/user-attachments/assets/46750df9-9960-488d-bd4d-f5917b795be6" />
+
