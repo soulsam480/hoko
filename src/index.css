@@ -78,3 +78,39 @@ input {
 :focus-visible {
   @apply outline-cyan-200;
 }
+
+@keyframes beacon-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.bus-marker-wrapper {
+  position: relative;
+  width: 28px;
+  height: 28px;
+}
+
+.bus-marker-wrapper svg {
+  position: relative;
+  z-index: 1;
+}
+
+.bus-beacon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  margin-top: -10px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.4);
+  animation: beacon-pulse 2s ease-out infinite;
+  z-index: 0;
+}

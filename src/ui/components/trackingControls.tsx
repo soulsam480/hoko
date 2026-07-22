@@ -1,26 +1,33 @@
-import { useComputed } from '@preact/signals'
-import { chosenRoute } from '../stores'
-import { AvailableFeeders } from './availableFeeders'
-import { SelectedRouteControls } from './selectedRouteControls'
 import { connection } from '../connection'
-import { CurrentTrackingControls } from './currentTrackingControls'
+import { chosenRoute } from '../stores'
+import { SelectedRouteControls } from './selectedRouteControls'
 
 export function TrackingControls() {
-  const status = useComputed(() => connection.trackingState.value.state)
-  const feeder = useComputed(() => connection.trackingState.value.feeder_id)
-
   if (chosenRoute.value === null) {
     return
   }
 
+  const state = connection.connectionState.value
+  const feederCount = connection.feeders.value.length
+
   return (
-    <>
+    <div className='flex flex-col gap-1'>
       <SelectedRouteControls />
-      {status.value === 'idle' && <AvailableFeeders />}
-      {status.value === 'requested' && (
-        <div className='text-xs'>Attempting to track {feeder}</div>
+      {state === 'joining' && (
+        <div className='text-xs text-cyan-700'>Joining room...</div>
       )}
-      {status.value === 'tracking' && <CurrentTrackingControls />}
-    </>
+      {state === 'error' && (
+        <div className='text-xs text-red-600'>
+          Connection failed. Select the route again to retry.
+        </div>
+      )}
+      {state === 'joined' && (
+        <div className='text-xs text-cyan-700'>
+          {feederCount === 0
+            ? 'No buses on this route right now'
+            : `${feederCount} bus${feederCount > 1 ? 'es' : ''} tracking on this route`}
+        </div>
+      )}
+    </div>
   )
 }

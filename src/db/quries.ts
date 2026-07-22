@@ -43,3 +43,12 @@ LIMIT 10;`
 
   return routes
 }
+
+export async function getStopsForRoute(routeId: number): Promise<Stop[]> {
+  const stops = await client.sql<Stop>`SELECT s.id, s.lat, s.lon, s.name
+FROM stops s
+JOIN routes_to_stops rs ON rs.stop_id = s.id
+WHERE rs.route_id = ${routeId}`
+
+  return stops
+}

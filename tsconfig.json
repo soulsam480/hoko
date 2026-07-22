@@ -1,20 +1,18 @@
 {
-	"compilerOptions": {
-		"strict": true,
-		"module": "ESNext",
-		"target": "ESNext",
-		"moduleResolution": "bundler",
-		"jsx": "react-jsx",
-		"jsxImportSource": "preact",
-		"skipLibCheck": true,
-		"types": [
-			"bun",
-			"vite/client",
-			"vite-plugin-pwa/client",
-			"unplugin-icons/types/preact"
-		]
-	},
-	"include": [
-		"src/**/*"
-	]
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "skipLibCheck": true,
+    "types": [
+      "bun",
+      "vite/client",
+      "vite-plugin-pwa/client",
+      "unplugin-icons/types/preact"
+    ]
+  },
+  "include": ["src/**/*"]
 }

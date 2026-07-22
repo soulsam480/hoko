@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@preact/signals": "^2.0.0",
-    "genosdb": "^0.22.1",
+    "genosdb": "^0.22.2",
     "leaflet": "^1.9.4",
     "mitt": "^3.0.1",
     "sqlocal": "^0.18.0"

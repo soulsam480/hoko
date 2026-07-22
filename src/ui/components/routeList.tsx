@@ -1,5 +1,5 @@
 import { useSignal } from '@preact/signals'
-// import { connection } from '../connection'
+import { connection } from '../connection'
 import { chosenRoute, chosenStop } from '../stores'
 import { suspendFn } from '../suspense-utils'
 import { BackButton } from './backButton'
@@ -33,7 +33,7 @@ function List({ routes }: IListProps) {
                   return
                 }
 
-                // connection.findFeeders(chosenStop.value?.id, route)
+                connection.joinRoute(route)
               }}
             >
               {route.name}
