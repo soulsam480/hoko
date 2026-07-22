@@ -1,25 +1,13 @@
-import { defineConfig, Plugin } from 'vite'
+import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import Icons from 'unplugin-icons/vite'
-
-function SQLiteDevPlugin(): Plugin {
-  return {
-    name: 'configure-response-headers',
-    configureServer: server => {
-      server.middlewares.use((_req, res, next) => {
-        res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
-        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
-        next()
-      })
-    }
-  }
-}
+import sqlocal from 'sqlocal/vite'
 
 export default defineConfig({
   plugins: [
     preact(),
-    SQLiteDevPlugin(),
+    sqlocal(),
     Icons({
       autoInstall: true,
       compiler: 'jsx',
