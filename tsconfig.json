@@ -6,6 +6,7 @@
 		"moduleResolution": "bundler",
 		"jsx": "react-jsx",
 		"jsxImportSource": "preact",
+		"skipLibCheck": true,
 		"types": [
 			"bun",
 			"vite/client",

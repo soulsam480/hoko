@@ -10,4 +10,4 @@ export const chosenRoute = persistedSignal<string | null>(null, 'chosen-route')
 
 export const insideBus = persistedSignal(false, 'is-inside-bus')
 
-export const isInitializingDatabase = signal(false)
+export const isInitializingDatabase = signal(true)

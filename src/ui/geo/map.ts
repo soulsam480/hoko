@@ -1,9 +1,11 @@
 import { effect } from '@preact/signals'
 import * as L from 'leaflet'
-import { isReady } from '../../db/browser'
-import { getClosestStops } from '../../db/browser/queries'
+// import { getClosestStops } from '../../db/browser/queries'
 import { connection } from '../connection'
-import { gpsSignal, closestStops } from '../stores'
+import {
+  gpsSignal
+  // closestStops
+} from '../stores'
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
 
@@ -55,11 +57,11 @@ export function renderMap() {
       lng: longitude
     })
 
-    isReady().then(() => {
-      getClosestStops(loc).then(res => {
-        closestStops.value = res
-      })
-    })
+    // isReady().then(() => {
+    //   getClosestStops(loc).then(res => {
+    //     closestStops.value = res
+    //   })
+    // })
   })
 
   return { map, myMarker }
@@ -68,31 +70,31 @@ export function renderMap() {
 const feederMarkers = new Map<string, L.Marker>()
 
 effect(() => {
-  const feeders = connection.feeders.value
-
-  if (map === null) {
-    return
-  }
-
-  feederMarkers.entries().forEach(([it, mark]) => {
-    if (!feeders.find(item => it !== item.id)) {
-      mark?.remove()
-
-      feederMarkers.delete(it)
-    }
-  })
-
-  for (const feeder of feeders) {
-    let marker = feederMarkers.get(feeder.id)
-
-    if (!marker) {
-      marker = L.marker(feeder.coordinates, { title: feeder.id })
-
-      marker.addTo(map)
-
-      feederMarkers.set(feeder.id, marker)
-    }
-
-    marker.setLatLng(feeder.coordinates)
-  }
+  // const feeders = connection.feeders.value
+  //
+  // if (map === null) {
+  //   return
+  // }
+  //
+  // feederMarkers.entries().forEach(([it, mark]) => {
+  //   if (!feeders.find(item => it !== item.id)) {
+  //     mark?.remove()
+  //
+  //     feederMarkers.delete(it)
+  //   }
+  // })
+  //
+  // for (const feeder of feeders) {
+  //   let marker = feederMarkers.get(feeder.id)
+  //
+  //   if (!marker) {
+  //     marker = L.marker(feeder.coordinates, { title: feeder.id })
+  //
+  //     marker.addTo(map)
+  //
+  //     feederMarkers.set(feeder.id, marker)
+  //   }
+  //
+  //   marker.setLatLng(feeder.coordinates)
+  // }
 })

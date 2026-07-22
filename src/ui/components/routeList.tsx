@@ -1,5 +1,4 @@
 import { useSignal } from '@preact/signals'
-import { getSearchedRoutes } from '../../db/browser/queries'
 import { connection } from '../connection'
 import { chosenRoute, chosenStop } from '../stores'
 import { suspendFn } from '../suspense-utils'
@@ -45,9 +44,9 @@ function List({ routes }: IListProps) {
 }
 
 function SearchedList({ term }: ISearchedProps) {
-  const fetcher = () => getSearchedRoutes(chosenStop.value!.id, term)
+  const fetcher = () => []
 
-  const data = suspendFn(`routes-${chosenStop.value!.id}-${term}`, fetcher)()
+  const data = suspendFn(`routes-${chosenStop.value?.id}-${term}`, fetcher)()
 
   return <List routes={data} />
 }
