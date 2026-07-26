@@ -1,13 +1,12 @@
 import { useSignal } from '@preact/signals'
+import { Suspense } from 'preact/compat'
+import CarbonSearch from '~icons/carbon/search'
+import { getSearchedRoutes } from '../../db/queries'
+import { Route } from '../../db/schema'
 import { connection } from '../connection'
 import { chosenRoute, chosenStop } from '../stores'
 import { suspendFn } from '../suspense-utils'
 import { BackButton } from './backButton'
-
-import { Suspense } from 'preact/compat'
-import { Object } from './object'
-import { getSearchedRoutes } from '../../db/queries'
-import { Route } from '../../db/schema'
 
 interface ISearchedProps {
   term: string
@@ -19,29 +18,31 @@ interface IListProps {
 
 function List({ routes }: IListProps) {
   return (
-    <ul className='grid grid-cols-2 gap-x-1 max-h-[calc(100vh_/_3)] overflow-y-scroll'>
-      {routes.map((route, id) => {
+    <div
+      id='route-grid'
+      className='grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[38vh] overflow-y-auto pb-1'
+    >
+      {routes.map(route => {
         return (
-          <li className='text-xs' key={route.id}>
-            <button
-              className='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
-              type='button'
-              onClick={() => {
-                chosenRoute.value = route
+          <button
+            key={route.id}
+            className='btn btn-outline justify-start font-mono'
+            type='button'
+            onClick={() => {
+              chosenRoute.value = route
 
-                if (chosenStop.value === null) {
-                  return
-                }
+              if (chosenStop.value === null) {
+                return
+              }
 
-                connection.joinRoute(route)
-              }}
-            >
-              {route.name}
-            </button>
-          </li>
+              connection.joinRoute(route)
+            }}
+          >
+            {route.name}
+          </button>
         )
       })}
-    </ul>
+    </div>
   )
 }
 
@@ -62,29 +63,37 @@ export function RouteList() {
 
   return (
     <div className='flex flex-col gap-2'>
-      <div className='flex gap-2'>
+      <div className='flex items-center gap-2 mb-1'>
         <BackButton
           onClick={() => {
             chosenStop.value = null
             chosenRoute.value = null
-
-            // connection.resetFeeders()
           }}
         />
-
-        <Object
-          title={chosenStop.value!.name}
-          description='Choose a route to track'
-        />
+        <div>
+          <h2 className='text-lg font-semibold leading-tight'>
+            {chosenStop.value!.name}
+          </h2>
+          <p className='text-sm text-base-content/60'>
+            Choose a route to track
+          </p>
+        </div>
       </div>
 
-      <input
-        type='text'
-        placeholder='Search routes'
-        onInput={e => (term.value = e.currentTarget.value)}
-      />
+      <label className='input input-bordered w-full mb-3'>
+        <CarbonSearch className='w-4 h-4 opacity-50' />
+        <input
+          type='text'
+          placeholder='Search routes'
+          onInput={e => (term.value = e.currentTarget.value)}
+        />
+      </label>
 
-      <Suspense fallback={<div>Searching...</div>}>
+      <Suspense
+        fallback={
+          <div className='text-xs text-base-content/50'>Searching...</div>
+        }
+      >
         <SearchedList term={term.value} />
       </Suspense>
     </div>

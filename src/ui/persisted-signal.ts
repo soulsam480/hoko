@@ -1,4 +1,4 @@
-import { signal, effect } from '@preact/signals-core'
+import { effect, signal } from '@preact/signals-core'
 
 interface CustomStorage {
   getItem(key: string): string

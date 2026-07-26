@@ -3,6 +3,7 @@ import preact from '@preact/preset-vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import Icons from 'unplugin-icons/vite'
 import sqlocal from 'sqlocal/vite'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [
@@ -13,6 +14,7 @@ export default defineConfig({
       compiler: 'jsx',
       jsx: 'preact'
     }),
+    tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
@@ -41,7 +43,6 @@ export default defineConfig({
   ],
   build: {
     target: 'esnext',
-    minify: 'esbuild',
     cssMinify: 'lightningcss'
   },
   resolve: {
@@ -55,5 +56,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['sqlocal', 'genosdb']
+  },
+  server: {
+    allowedHosts: ['hoko.test']
   }
 })

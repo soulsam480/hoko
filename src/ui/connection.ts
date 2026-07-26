@@ -1,11 +1,17 @@
-import { insideBus as storesInsideBus, feeders, connectionState } from './stores'
-import { USER_ID } from './userId'
-import type { Route } from '../db/schema'
 import type { GDB, RoomChannel } from 'genosdb'
+import type { Route } from '../db/schema'
+import {
+  connectionState,
+  feeders,
+  insideBus as storesInsideBus
+} from './stores'
+import { USER_ID } from './userId'
 
 let db: GDB | undefined
 let gpsChannel: RoomChannel | undefined
-let gpsMessageHandler: ((data: { userId: string; lat: number; lon: number }) => void) | undefined
+let gpsMessageHandler:
+  | ((data: { userId: string; lat: number; lon: number }) => void)
+  | undefined
 let broadcastTimer: ReturnType<typeof setInterval> | undefined
 let _sweepTimer: ReturnType<typeof setInterval> | undefined
 let currentRouteId: number | undefined
@@ -65,7 +71,11 @@ export async function joinRoute(route: Route) {
 
     gpsChannel.on(
       'message',
-      (gpsMessageHandler = (data: { userId: string; lat: number; lon: number }) => {
+      (gpsMessageHandler = (data: {
+        userId: string
+        lat: number
+        lon: number
+      }) => {
         if (data.userId === USER_ID) return
 
         const arr = feeders.peek()

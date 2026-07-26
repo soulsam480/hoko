@@ -1,4 +1,4 @@
-import CarbonPreviousOutline from '~icons/carbon/previous-outline'
+import CarbonChevronLeft from '~icons/carbon/chevron-left'
 
 interface IBackButtonProps {
   onClick: () => void
@@ -7,11 +7,12 @@ interface IBackButtonProps {
 export function BackButton({ onClick }: IBackButtonProps) {
   return (
     <button
-      className='hover:text-cyan-600 transition-colors duration-200 ease-in-out'
+      className='btn btn-circle btn-ghost btn-sm'
       type='button'
       onClick={onClick}
+      aria-label='Back'
     >
-      <CarbonPreviousOutline />
+      <CarbonChevronLeft className='w-4 h-4' />
     </button>
   )
 }

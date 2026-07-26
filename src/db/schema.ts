@@ -19,4 +19,4 @@ interface RouteToStop {
   route_id: number
 }
 
-export type { Stop, Route, RouteToStop }
+export type { Route, RouteToStop, Stop }

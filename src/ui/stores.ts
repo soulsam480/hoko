@@ -1,6 +1,6 @@
 import { signal } from '@preact/signals'
-import { persistedSignal } from './persisted-signal'
 import { Route, Stop } from '../db/schema'
+import { persistedSignal } from './persisted-signal'
 
 export interface Feeder {
   userId: string

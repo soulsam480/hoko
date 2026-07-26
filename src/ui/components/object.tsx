@@ -16,12 +16,13 @@ export function Object({
   return (
     <div className='flex items-center gap-1'>
       {Icon && <Icon />}
-
       <div className='flex flex-col'>
-        {label && <div className='text-xxs'>{label}</div>}
-        <div className='text-xs font-semibold'>{title}</div>
+        {label && <div className='text-xs text-base-content/70'>{label}</div>}
+        <div className='text-xs font-semibold text-base-content'>{title}</div>
         {description && (
-          <div className='text-gray-800 text-xxs break-words'>{description}</div>
+          <div className='text-xs text-base-content/70 break-words'>
+            {description}
+          </div>
         )}
       </div>
     </div>

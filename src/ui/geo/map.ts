@@ -1,11 +1,17 @@
 import { effect } from '@preact/signals'
 import * as L from 'leaflet'
-
-import { connection } from '../connection'
-import { closestStops, gpsSignal, chosenStop, chosenRoute, feeders, connectionState, type Feeder } from '../stores'
-import { getClosestStops, getStopsForRoute } from '../../db/queries'
 import { isReady } from '../../db/client'
-import { haversine, clusterFeeders } from '../../lib/coordinates'
+import { getClosestStops, getStopsForRoute } from '../../db/queries'
+import { clusterFeeders, haversine } from '../../lib/coordinates'
+import { connection } from '../connection'
+import {
+  chosenRoute,
+  chosenStop,
+  closestStops,
+  connectionState,
+  feeders,
+  gpsSignal
+} from '../stores'
 
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
@@ -56,7 +62,10 @@ export function renderMap() {
     zoomControl: true
   })
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // light mode => https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png
+  // dark mode => https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     crossOrigin: true,
     maxZoom: 19,
     attribution:
@@ -96,6 +105,12 @@ export function renderMap() {
   return { map, myMarker }
 }
 
+export function recenterMap() {
+  const loc = gpsSignal.value
+  if (!map || !loc) return
+  map.flyTo({ lat: loc.latitude, lng: loc.longitude })
+}
+
 // Revive tracking after page reload — only if near route stops
 let reviving = false
 
@@ -116,15 +131,17 @@ effect(() => {
         s => haversine(loc.latitude, loc.longitude, s.lat, s.lon) < 300
       )
 
-      if (near) {
+      if (near && connectionState.value === 'idle') {
         connection.joinRoute(route)
-      } else {
+      } else if (connectionState.value === 'idle') {
         chosenRoute.value = null
         chosenStop.value = null
       }
     } catch {
-      chosenRoute.value = null
-      chosenStop.value = null
+      if (connectionState.value === 'idle') {
+        chosenRoute.value = null
+        chosenStop.value = null
+      }
     } finally {
       reviving = false
     }

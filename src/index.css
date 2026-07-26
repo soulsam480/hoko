@@ -1,56 +1,46 @@
 @import "tailwindcss";
 
-@theme {
-  --text-xs: 0.75rem;
-  --text-xs--line-height: 1rem;
-  --text-sm: 0.875rem;
-  --text-sm--line-height: 1.25rem;
-  --text-base: 1rem;
-  --text-base--line-height: 1.5rem;
-  --text-lg: 1.125rem;
-  --text-lg--line-height: 1.75rem;
-  --text-xl: 1.25rem;
-  --text-xl--line-height: 1.75rem;
-  --text-2xl: 1.5rem;
-  --text-2xl--line-height: 2rem;
-  --text-3xl: 1.875rem;
-  --text-3xl--line-height: 2.25rem;
-  --text-4xl: 2.25rem;
-  --text-4xl--line-height: 2.5rem;
-  --text-5xl: 3rem;
-  --text-5xl--line-height: 1;
-  --text-6xl: 3.75rem;
-  --text-6xl--line-height: 1;
-  --text-7xl: 4.5rem;
-  --text-7xl--line-height: 1;
-  --text-8xl: 6rem;
-  --text-8xl--line-height: 1;
-  --text-9xl: 8rem;
-  --text-9xl--line-height: 1;
-  --text-xxs: 10px;
-  --text-xxs--line-height: 16px;
+@plugin "daisyui" {
+  themes: light;
 }
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+@plugin "daisyui/theme" {
+  name: "cruncherdark";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
+  --color-base-100: oklch(16% 0.006 55);
+  --color-base-200: oklch(21% 0.008 55);
+  --color-base-300: oklch(27% 0.01 55);
+  --color-base-content: oklch(93% 0.01 70);
+  --color-primary: oklch(75% 0.16 65);
+  --color-primary-content: oklch(18% 0.03 55);
+  --color-secondary: oklch(60% 0.03 60);
+  --color-secondary-content: oklch(95% 0.01 60);
+  --color-accent: oklch(70% 0.14 150);
+  --color-accent-content: oklch(15% 0.02 150);
+  --color-neutral: oklch(24% 0.008 55);
+  --color-neutral-content: oklch(90% 0.01 60);
+  --color-info: oklch(72% 0.1 220);
+  --color-info-content: oklch(15% 0.02 220);
+  --color-success: oklch(70% 0.14 150);
+  --color-success-content: oklch(15% 0.02 150);
+  --color-warning: oklch(80% 0.14 80);
+  --color-warning-content: oklch(20% 0.03 80);
+  --color-error: oklch(65% 0.2 25);
+  --color-error-content: oklch(96% 0.01 25);
 
-  button {
-    @apply cursor-pointer;
-  }
+  --radius-selector: 1rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1.5rem;
+
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
 }
 
 html,
@@ -60,23 +50,13 @@ body {
   margin: 0;
 }
 
+body {
+  overscroll-behavior: none;
+}
+
 #app {
   z-index: 0;
   height: 100%;
-}
-
-@plugin "@tailwindcss/forms";
-
-input {
-  @apply rounded text-xs focus:ring-cyan-100 focus:outline-0 focus:border-cyan-200;
-}
-
-[type="text"] {
-  @apply p-1;
-}
-
-:focus-visible {
-  @apply outline-cyan-200;
 }
 
 @keyframes beacon-pulse {
@@ -88,6 +68,21 @@ input {
     transform: scale(2.5);
     opacity: 0;
   }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sheet {
+  animation: sheet-up 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .bus-marker-wrapper {
@@ -113,4 +108,14 @@ input {
   background: rgba(37, 99, 235, 0.4);
   animation: beacon-pulse 2s ease-out infinite;
   z-index: 0;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(40% 0.01 60);
+  border-radius: 999px;
 }

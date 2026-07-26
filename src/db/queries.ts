@@ -1,6 +1,6 @@
-import { client } from './client'
 import { getCoordRange } from '../lib/location'
-import type { Stop, Route } from './schema'
+import { client } from './client'
+import type { Route, Stop } from './schema'
 
 export async function getClosestStops(
   coords: GeolocationCoordinates
