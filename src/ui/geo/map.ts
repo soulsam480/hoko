@@ -10,11 +10,19 @@ import {
   closestStops,
   connectionState,
   feeders,
-  gpsSignal
+  gpsSignal,
+  theme,
+  TTheme
 } from '../stores'
 
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
+let tileLayer: L.TileLayer | null = null
+
+const TILE_URLS: Record<TTheme, string> = {
+  forest: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  lemonade: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+}
 
 const STOP_ICON = L.divIcon({
   className: '',
@@ -62,19 +70,33 @@ export function renderMap() {
     zoomControl: true
   })
 
-  // light mode => https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png
-  // dark mode => https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
-
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  const currentTheme = theme.value
+  tileLayer = L.tileLayer(TILE_URLS[currentTheme], {
     crossOrigin: true,
     maxZoom: 19,
     attribution:
       '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map)
 
+  document.documentElement.setAttribute('data-theme', currentTheme)
+
   L.control.scale({ imperial: false, maxWidth: 300 }).addTo(map)
 
   let hasFlown = false
+
+  effect(() => {
+    const currentTheme = theme.value
+    if (tileLayer && map) {
+      map.removeLayer(tileLayer)
+      tileLayer = L.tileLayer(TILE_URLS[currentTheme], {
+        crossOrigin: true,
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map)
+      document.documentElement.setAttribute('data-theme', currentTheme)
+    }
+  })
 
   effect(() => {
     const loc = gpsSignal.value

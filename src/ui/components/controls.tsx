@@ -1,14 +1,23 @@
 import { useSignal } from '@preact/signals'
 import GisPoisO from '~icons/gis/pois-o'
+import { theme } from '../stores'
 import { RouteList } from './routeList'
 import { StopList } from './stopList'
 import { TrackingControls } from './trackingControls'
 
 export function Controls() {
   const open = useSignal(true)
+  const isDark = useSignal(theme.value === 'forest')
+
+  const toggle = () => {
+    isDark.value = !isDark.value
+    theme.value = isDark.value ? 'forest' : 'lemonade'
+    document.documentElement.setAttribute('data-theme', theme.value)
+  }
+
   return (
     <>
-      <div className='fixed top-4 left-4 z-20'>
+      <div className='fixed top-4 left-4 z-20 flex gap-2'>
         <button
           className='btn btn-circle btn-sm btn-soft shadow-lg'
           type='button'
@@ -17,6 +26,13 @@ export function Controls() {
           }}
         >
           <GisPoisO className='stroke-2' />
+        </button>
+        <button
+          className='btn btn-circle btn-sm btn-soft shadow-lg'
+          type='button'
+          onClick={toggle}
+        >
+          {isDark.value ? '🌙' : '☀️'}
         </button>
       </div>
 
