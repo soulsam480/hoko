@@ -6,7 +6,7 @@ import { BackButton } from './backButton'
 
 import { Suspense } from 'preact/compat'
 import { Object } from './object'
-import { getSearchedRoutes } from '../../db/quries'
+import { getSearchedRoutes } from '../../db/queries'
 import { Route } from '../../db/schema'
 
 interface ISearchedProps {
@@ -19,12 +19,12 @@ interface IListProps {
 
 function List({ routes }: IListProps) {
   return (
-    <ul class='grid grid-cols-2 gap-x-1 max-h-[calc(100vh_/_3)] overflow-y-scroll'>
+    <ul className='grid grid-cols-2 gap-x-1 max-h-[calc(100vh_/_3)] overflow-y-scroll'>
       {routes.map((route, id) => {
         return (
-          <li class='text-xs' key={`${route}__${id}`}>
+          <li className='text-xs' key={route.id}>
             <button
-              class='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
+              className='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
               type='button'
               onClick={() => {
                 chosenRoute.value = route

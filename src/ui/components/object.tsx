@@ -18,10 +18,10 @@ export function Object({
       {Icon && <Icon />}
 
       <div className='flex flex-col'>
-        {label && <div class='text-xxs'>{label}</div>}
-        <div class='text-xs font-semibold'>{title}</div>
+        {label && <div className='text-xxs'>{label}</div>}
+        <div className='text-xs font-semibold'>{title}</div>
         {description && (
-          <div class='text-gray-800 text-xxs break-words'>{description}</div>
+          <div className='text-gray-800 text-xxs break-words'>{description}</div>
         )}
       </div>
     </div>

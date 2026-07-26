@@ -6,9 +6,9 @@ import { registerSW } from 'virtual:pwa-register'
 import { renderMap } from './ui/geo/map'
 import { startGPS } from './ui/geo/pos'
 
-const { map } = renderMap()
+renderMap()
 
-startGPS(map)
+startGPS()
 
 render(<App />, document.getElementById('hoko-controls')!)
 

@@ -2,10 +2,10 @@ import { effect } from '@preact/signals'
 import * as L from 'leaflet'
 
 import { connection } from '../connection'
-import type { Feeder } from '../connection'
-import { closestStops, gpsSignal, chosenStop, chosenRoute } from '../stores'
-import { getClosestStops, getStopsForRoute } from '../../db/quries'
+import { closestStops, gpsSignal, chosenStop, chosenRoute, feeders, connectionState, type Feeder } from '../stores'
+import { getClosestStops, getStopsForRoute } from '../../db/queries'
 import { isReady } from '../../db/client'
+import { haversine, clusterFeeders } from '../../lib/coordinates'
 
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
@@ -49,14 +49,6 @@ function clusterBusIcon(count: number) {
   })
 }
 
-export function setMyMarker(marker: L.Marker) {
-  myMarker = marker
-}
-
-export function getMyMarket() {
-  return myMarker
-}
-
 export function renderMap() {
   map = L.map('app', {
     center: [12.9542802, 77.4661305],
@@ -73,6 +65,8 @@ export function renderMap() {
 
   L.control.scale({ imperial: false, maxWidth: 300 }).addTo(map)
 
+  let hasFlown = false
+
   effect(() => {
     const loc = gpsSignal.value
     if (loc === null) return
@@ -86,6 +80,11 @@ export function renderMap() {
     }
 
     myMarker.setLatLng({ lat: latitude, lng: longitude })
+
+    if (!hasFlown) {
+      hasFlown = true
+      map!.zoomIn(5).flyTo({ lat: latitude, lng: longitude })
+    }
 
     isReady().then(() => {
       getClosestStops(loc).then(res => {
@@ -107,7 +106,7 @@ effect(() => {
   const loc = gpsSignal.value
 
   if (!route || !stop || !loc) return
-  if (connection.connectionState.value !== 'idle') return
+  if (connectionState.value !== 'idle') return
 
   reviving = true
   isReady().then(async () => {
@@ -163,60 +162,13 @@ effect(() => {
   }
 })
 
-function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371000
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLon = ((lon2 - lon1) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
-
-function clusterFeeders(feeders: Feeder[], threshold = 50) {
-  const remaining = [...feeders]
-  const clusters: {
-    center: [number, number]
-    count: number
-    ids: string[]
-  }[] = []
-
-  while (remaining.length > 0) {
-    const pivot = remaining.shift()!
-    const group = [pivot]
-
-    for (let i = remaining.length - 1; i >= 0; i--) {
-      if (
-        haversine(pivot.lat, pivot.lon, remaining[i].lat, remaining[i].lon) <=
-        threshold
-      ) {
-        group.push(remaining[i])
-        remaining.splice(i, 1)
-      }
-    }
-
-    clusters.push({
-      center: [
-        group.reduce((s, f) => s + f.lat, 0) / group.length,
-        group.reduce((s, f) => s + f.lon, 0) / group.length
-      ],
-      count: group.length,
-      ids: group.map(f => f.userId).sort()
-    })
-  }
-
-  return clusters
-}
-
 const busMarkers = new Map<string, L.Marker>()
 
 effect(() => {
-  const feeders = connection.feeders.value
+  const currentFeeders = feeders.value
   if (map === null) return
 
-  const clusters = clusterFeeders(feeders, 50)
+  const clusters = clusterFeeders(currentFeeders, 50)
 
   const clusterKeys = new Set(clusters.map(c => c.ids.join(',')))
   for (const [key, marker] of busMarkers) {
@@ -248,7 +200,7 @@ effect(() => {
       }
       marker.setLatLng(cluster.center)
 
-      const feeder = feeders.find(f => f.userId === cluster.ids[0])
+      const feeder = currentFeeders.find(f => f.userId === cluster.ids[0])
       const secondsAgo = feeder
         ? Math.round((Date.now() - feeder.lastSeen) / 1000)
         : 0

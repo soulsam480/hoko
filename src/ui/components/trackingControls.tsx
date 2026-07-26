@@ -1,5 +1,5 @@
 import { connection } from '../connection'
-import { chosenRoute } from '../stores'
+import { chosenRoute, feeders, connectionState } from '../stores'
 import { SelectedRouteControls } from './selectedRouteControls'
 
 export function TrackingControls() {
@@ -7,8 +7,8 @@ export function TrackingControls() {
     return
   }
 
-  const state = connection.connectionState.value
-  const feederCount = connection.feeders.value.length
+  const state = connectionState.value
+  const feederCount = feeders.value.length
 
   return (
     <div className='flex flex-col gap-1'>

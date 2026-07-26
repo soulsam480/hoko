@@ -13,12 +13,12 @@ export function StopList() {
         description='Showing within 1km radius'
       />
 
-      <ul class='flex flex-col max-h-[calc(100vh_/_3)] overflow-y-scroll'>
+      <ul className='flex flex-col max-h-[calc(100vh_/_3)] overflow-y-scroll'>
         {closestStops.value.map(stop => {
           return (
-            <li class='text-xs' key={stop.id}>
+            <li className='text-xs' key={stop.id}>
               <button
-                class='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
+                className='p-1 hover:bg-cyan-100 rounded-sm w-full text-start'
                 type='button'
                 onClick={() => {
                   chosenStop.value = stop

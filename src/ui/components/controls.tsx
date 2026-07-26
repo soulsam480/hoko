@@ -9,13 +9,13 @@ export function Controls() {
   return (
     <>
       <button
-        class='bg-cyan-50 p-2 border border-cyan-200 relative text-cyan-800 rounded-full shadow-md'
+        className='bg-cyan-50 p-2 border border-cyan-200 relative text-cyan-800 rounded-full shadow-md'
         type='button'
         onClick={() => {
           openControls.value = !openControls.value
         }}
       >
-        <GisPoisO class='stroke-2' />
+        <GisPoisO className='stroke-2' />
       </button>
 
       {openControls.value && (

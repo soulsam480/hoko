@@ -1,23 +1,11 @@
-import { signal } from '@preact/signals'
-import { insideBus as storesInsideBus } from './stores'
+import { insideBus as storesInsideBus, feeders, connectionState } from './stores'
 import { USER_ID } from './userId'
 import type { Route } from '../db/schema'
 import type { GDB, RoomChannel } from 'genosdb'
 
-export interface Feeder {
-  userId: string
-  lat: number
-  lon: number
-  lastSeen: number
-}
-
-export const feeders = signal<Feeder[]>([])
-export const connectionState = signal<'idle' | 'joining' | 'joined' | 'error'>(
-  'idle'
-)
-
 let db: GDB | undefined
 let gpsChannel: RoomChannel | undefined
+let gpsMessageHandler: ((data: { userId: string; lat: number; lon: number }) => void) | undefined
 let broadcastTimer: ReturnType<typeof setInterval> | undefined
 let _sweepTimer: ReturnType<typeof setInterval> | undefined
 let currentRouteId: number | undefined
@@ -29,9 +17,6 @@ async function ensureDB() {
   const { gdb } = await import('genosdb')
 
   db = await gdb('hoko', { rtc: true })
-
-  db.room?.on('peer:join', () => {})
-  db.room?.on('peer:leave', () => {})
 
   _sweepTimer = setInterval(() => {
     const now = Date.now()
@@ -80,7 +65,7 @@ export async function joinRoute(route: Route) {
 
     gpsChannel.on(
       'message',
-      (data: { userId: string; lat: number; lon: number }) => {
+      (gpsMessageHandler = (data: { userId: string; lat: number; lon: number }) => {
         if (data.userId === USER_ID) return
 
         const arr = feeders.peek()
@@ -107,7 +92,7 @@ export async function joinRoute(route: Route) {
           lastSeen: Date.now()
         }
         feeders.value = next
-      }
+      })
     )
 
     if (storesInsideBus.value) {
@@ -124,7 +109,11 @@ export async function joinRoute(route: Route) {
 export async function leaveRoute() {
   stopBroadcast()
 
+  if (gpsChannel && gpsMessageHandler) {
+    gpsChannel.off('message', gpsMessageHandler)
+  }
   gpsChannel = undefined
+  gpsMessageHandler = undefined
   currentRouteId = undefined
   feeders.value = []
   connectionState.value = 'idle'
@@ -156,8 +145,6 @@ export const connection = {
   joinRoute,
   leaveRoute,
   toggleInsideBus,
-  feeders,
-  connectionState,
   insideBus: storesInsideBus,
   updatePosition
 }

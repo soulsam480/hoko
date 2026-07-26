@@ -24,7 +24,7 @@ export function SelectedRouteControls() {
 
       <div className='flex flex-col gap-1'>
         <Object title='Settings' icon={CarbonSettings} />
-        <label class='flex items-center gap-2 text-xs' id='inside-bus'>
+        <label className='flex items-center gap-2 text-xs' id='inside-bus'>
           <input
             type='checkbox'
             checked={insideBus.value}

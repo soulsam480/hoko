@@ -1,4 +1,5 @@
 import { SQLocal } from 'sqlocal'
+import { isInitializingDatabase } from '../ui/stores'
 
 const client = new SQLocal('hoko.sqlite')
 
@@ -14,7 +15,9 @@ async function initDatabase() {
   localStorage.setItem('init_db', 'true')
 }
 
-const dbPromise = initDatabase()
+const dbPromise = initDatabase().then(() => {
+  isInitializingDatabase.value = false
+})
 
 async function isReady() {
   await dbPromise
