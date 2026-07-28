@@ -1,5 +1,7 @@
 import { useSignal } from '@preact/signals'
+import CarbonCenterCircle from '~icons/carbon/center-circle'
 import GisPoisO from '~icons/gis/pois-o'
+import { recenterMap } from '../geo/map'
 import { theme } from '../stores'
 import { RouteList } from './routeList'
 import { StopList } from './stopList'
@@ -7,17 +9,17 @@ import { TrackingControls } from './trackingControls'
 
 export function Controls() {
   const open = useSignal(true)
-  const isDark = useSignal(theme.value === 'forest')
+  const isDark = useSignal(theme.value === 'dracula')
 
   const toggle = () => {
     isDark.value = !isDark.value
-    theme.value = isDark.value ? 'forest' : 'lemonade'
+    theme.value = isDark.value ? 'dracula' : 'lemonade'
     document.documentElement.setAttribute('data-theme', theme.value)
   }
 
   return (
     <>
-      <div className='fixed top-4 left-4 z-20 flex gap-2'>
+      <div className='fixed top-4 right-4 z-20 flex flex-col gap-2'>
         <button
           className='btn btn-circle btn-sm btn-soft shadow-lg'
           type='button'
@@ -26,6 +28,15 @@ export function Controls() {
           }}
         >
           <GisPoisO className='stroke-2' />
+        </button>
+
+        <button
+          className='btn btn-circle btn-sm btn-soft'
+          type='button'
+          aria-label='Recenter map'
+          onClick={recenterMap}
+        >
+          <CarbonCenterCircle className='w-5 h-5' />
         </button>
         <button
           className='btn btn-circle btn-sm btn-soft shadow-lg'

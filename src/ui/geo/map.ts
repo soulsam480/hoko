@@ -11,8 +11,8 @@ import {
   connectionState,
   feeders,
   gpsSignal,
-  theme,
-  TTheme
+  TTheme,
+  theme
 } from '../stores'
 
 let myMarker: L.Marker | null = null
@@ -20,19 +20,19 @@ let map: L.Map | null = null
 let tileLayer: L.TileLayer | null = null
 
 const TILE_URLS: Record<TTheme, string> = {
-  forest: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  dracula: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
   lemonade: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 }
 
+const STOP_MARKERS = new Map<number, L.Marker>()
+const BUS_MARKERS = new Map<string, L.Marker>()
+
 const STOP_ICON = L.divIcon({
   className: '',
-  html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-    <path d="M12 2C7.58 2 4 5.58 4 10c0 5.54 8 12 8 12s8-6.46 8-12c0-4.42-3.58-8-8-8z" fill="#ef4444" stroke="#fff" stroke-width="2"/>
-    <circle cx="12" cy="10" r="3" fill="#fff"/>
-  </svg>`,
-  iconSize: [24, 28],
+  html: `<div class="flex flex-col items-center justify-center w-5 h-5 rounded-full"><span class="active-ping absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span><svg viewBox="0 0 32 32" width="1.2em" height="1.2em" class="w-4 h-4"><path fill="currentColor" d="M27 11h2v4h-2zM3 11h2v4H3zm17 9h2v2h-2zm-10 0h2v2h-2z"></path><path fill="currentColor" d="M21 4H11a5.006 5.006 0 0 0-5 5v14a2 2 0 0 0 2 2v3h2v-3h12v3h2v-3a2.003 2.003 0 0 0 2-2V9a5.006 5.006 0 0 0-5-5m3 6v6H8v-6ZM11 6h10a2.995 2.995 0 0 1 2.816 2H8.184A2.995 2.995 0 0 1 11 6M8 23v-5h16.001l.001 5Z"></path></svg></div>`,
+  iconSize: [20, 20],
   iconAnchor: [12, 26],
-  tooltipAnchor: [0, -14]
+  tooltipAnchor: [0, -20]
 })
 
 const BUS_ICON = L.divIcon({
@@ -67,15 +67,14 @@ export function renderMap() {
   map = L.map('app', {
     center: [12.9542802, 77.4661305],
     zoom: 12,
-    zoomControl: true
+    zoomControl: false
   })
 
   const currentTheme = theme.value
   tileLayer = L.tileLayer(TILE_URLS[currentTheme], {
     crossOrigin: true,
     maxZoom: 19,
-    attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    attribution: '&copy; OpenStreetMap &copy; CARTO'
   }).addTo(map)
 
   document.documentElement.setAttribute('data-theme', currentTheme)
@@ -100,21 +99,36 @@ export function renderMap() {
 
   effect(() => {
     const loc = gpsSignal.value
-    if (loc === null) return
+
+    if (loc === null) {
+      return
+    }
 
     connection.updatePosition(loc)
 
     const { latitude, longitude } = loc
 
-    if (myMarker === null) {
-      myMarker = L.marker([latitude, longitude]).addTo(map!)
+    if (myMarker === null && map) {
+      myMarker = L.marker([latitude, longitude]).addTo(map)
+      myMarker.setIcon(
+        L.divIcon({
+          className: '',
+          html: `<span class="relative flex size-4">
+  <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-info opacity-75"></span>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32"><circle cx="16" cy="16" r="10" fill="var(--color-info)"/><path fill="var(--color-info)" d="M16 30a14 14 0 1 1 14-14a14.016 14.016 0 0 1-14 14m0-26a12 12 0 1 0 12 12A12.014 12.014 0 0 0 16 4"/></svg>
+</span>`,
+          iconSize: [20, 20],
+          iconAnchor: [20, 20],
+          tooltipAnchor: [0, -20]
+        })
+      )
     }
 
-    myMarker.setLatLng({ lat: latitude, lng: longitude })
+    myMarker?.setLatLng({ lat: latitude, lng: longitude })
 
     if (!hasFlown) {
       hasFlown = true
-      map!.zoomIn(5).flyTo({ lat: latitude, lng: longitude })
+      map?.zoomIn(5).flyTo({ lat: latitude, lng: longitude })
     }
 
     isReady().then(() => {
@@ -131,6 +145,16 @@ export function recenterMap() {
   const loc = gpsSignal.value
   if (!map || !loc) return
   map.flyTo({ lat: loc.latitude, lng: loc.longitude })
+}
+
+export function flyToStop(id: number) {
+  const marker = STOP_MARKERS.get(id)
+
+  if (!marker) {
+    return
+  }
+
+  map?.flyTo(marker.getLatLng())
 }
 
 // Revive tracking after page reload — only if near route stops
@@ -170,38 +194,72 @@ effect(() => {
   })
 })
 
-const stopMarkers = new Map<number, L.Marker>()
+let lastMarker: L.Marker | null = null
+
+function clearLastMarker() {
+  if (lastMarker) {
+    lastMarker.getElement()?.removeAttribute('data-active')
+
+    lastMarker = null
+  }
+}
+
+effect(() => {
+  const stop = chosenStop.value
+
+  if (!stop) {
+    clearLastMarker()
+    return
+  }
+
+  const activeMarker = STOP_MARKERS.get(stop.id)
+
+  if (!activeMarker) {
+    clearLastMarker()
+    return
+  }
+
+  lastMarker?.getElement()?.removeAttribute('data-active')
+  activeMarker.getElement()?.setAttribute('data-active', 'true')
+
+  lastMarker = activeMarker
+})
 
 effect(() => {
   const stops = closestStops.value
-  if (map === null) return
 
-  for (const [id, marker] of stopMarkers) {
+  if (map === null) {
+    return
+  }
+
+  for (const [id, marker] of STOP_MARKERS) {
     if (!stops.find(s => s.id === id)) {
       marker.remove()
-      stopMarkers.delete(id)
+      STOP_MARKERS.delete(id)
     }
   }
 
   for (const stop of stops) {
-    let marker = stopMarkers.get(stop.id)
+    let marker = STOP_MARKERS.get(stop.id)
+
     if (!marker) {
       marker = L.marker([stop.lat, stop.lon], {
         icon: STOP_ICON
       }).addTo(map)
 
+      marker.getElement()?.classList.add('stop-marker')
       marker.bindTooltip(stop.name, { direction: 'top' })
+
       marker.on('click', () => {
         chosenStop.value = stop
       })
 
-      stopMarkers.set(stop.id, marker)
+      STOP_MARKERS.set(stop.id, marker)
     }
+
     marker.setLatLng([stop.lat, stop.lon])
   }
 })
-
-const busMarkers = new Map<string, L.Marker>()
 
 effect(() => {
   const currentFeeders = feeders.value
@@ -210,16 +268,16 @@ effect(() => {
   const clusters = clusterFeeders(currentFeeders, 50)
 
   const clusterKeys = new Set(clusters.map(c => c.ids.join(',')))
-  for (const [key, marker] of busMarkers) {
+  for (const [key, marker] of BUS_MARKERS) {
     if (!clusterKeys.has(key)) {
       marker.remove()
-      busMarkers.delete(key)
+      BUS_MARKERS.delete(key)
     }
   }
 
   for (const cluster of clusters) {
     const key = cluster.ids.join(',')
-    let marker = busMarkers.get(key)
+    let marker = BUS_MARKERS.get(key)
 
     if (cluster.count > 1) {
       if (!marker) {
@@ -228,14 +286,14 @@ effect(() => {
         }).addTo(map)
 
         marker.bindTooltip(`${cluster.count} buses`, { direction: 'top' })
-        busMarkers.set(key, marker)
+        BUS_MARKERS.set(key, marker)
       }
       marker.setLatLng(cluster.center)
     } else {
       if (!marker) {
         marker = L.marker(cluster.center, { icon: BUS_ICON }).addTo(map)
         marker.bindTooltip('', { direction: 'top' })
-        busMarkers.set(key, marker)
+        BUS_MARKERS.set(key, marker)
       }
       marker.setLatLng(cluster.center)
 

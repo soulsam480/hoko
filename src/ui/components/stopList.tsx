@@ -1,5 +1,6 @@
 import CarbonBus from '~icons/carbon/bus'
 import CarbonChevronRight from '~icons/carbon/chevron-right'
+import { flyToStop } from '../geo/map'
 import { chosenStop, closestStops } from '../stores'
 
 export function StopList() {
@@ -27,6 +28,8 @@ export function StopList() {
               className='list-row items-center py-2 px-2 rounded-field hover:bg-base-200 cursor-pointer transition-colors'
               onClick={() => {
                 chosenStop.value = stop
+
+                flyToStop(stop.id)
               }}
             >
               <div className='avatar avatar-placeholder'>

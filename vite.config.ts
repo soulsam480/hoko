@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
 import preact from '@preact/preset-vite'
-import { VitePWA } from 'vite-plugin-pwa'
-import Icons from 'unplugin-icons/vite'
-import sqlocal from 'sqlocal/vite'
 import tailwindcss from '@tailwindcss/vite'
+import sqlocal from 'sqlocal/vite'
+import Icons from 'unplugin-icons/vite'
+import { defineConfig } from 'vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [

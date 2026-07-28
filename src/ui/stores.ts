@@ -24,6 +24,6 @@ export const connectionState = signal<'idle' | 'joining' | 'joined' | 'error'>(
 
 export const isInitializingDatabase = signal(true)
 
-export type TTheme = 'forest' | 'lemonade'
+export type TTheme = 'dracula' | 'lemonade'
 
-export const theme = persistedSignal<TTheme>('forest', 'theme')
+export const theme = persistedSignal<TTheme>('dracula', 'theme')
