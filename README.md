@@ -78,9 +78,9 @@ user went home) — clears the stale persisted state so they start fresh.
 - on page reload, smart revive checks GPS proximity to route stops before
   rejoining
 
-## Early screenshots
+## Screenshots
 
-<img width="1470" height="874" alt="image" src="https://github.com/user-attachments/assets/46750df9-9960-488d-bd4d-f5917b795be6" />
+<img width="1470" height="804" alt="image" src="https://github.com/user-attachments/assets/2d9c9cb0-eb47-44f1-8d4a-169c5e9d7595" />
 
 ## Citations
 
