@@ -3,8 +3,9 @@ import { Suspense } from 'preact/compat'
 import CarbonSearch from '~icons/carbon/search'
 import { getSearchedRoutes } from '../../db/queries'
 import { Route } from '../../db/schema'
+import { haversine } from '../../lib/coordinates'
 import { connection } from '../connection'
-import { chosenRoute, chosenStop } from '../stores'
+import { chosenRoute, chosenStop, presenceIndex } from '../stores'
 import { suspendFn } from '../suspense-utils'
 import { BackButton } from './backButton'
 
@@ -17,12 +18,32 @@ interface IListProps {
 }
 
 function List({ routes }: IListProps) {
+  const stop = chosenStop.value
+
   return (
     <div
       id='route-grid'
       className='grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[38vh] overflow-y-auto pb-1'
     >
       {routes.map(route => {
+        const feeders = presenceIndex.value.get(route.id) || []
+        const activeFeeders = feeders.filter(
+          f => Date.now() - f.lastSeen < 90_000
+        )
+        const count = activeFeeders.length
+
+        let closestDistance: string | null = null
+        if (stop && count > 0) {
+          const distances = activeFeeders.map(f =>
+            haversine(stop.lat, stop.lon, f.lat, f.lon)
+          )
+          const minMeters = Math.round(Math.min(...distances))
+          closestDistance =
+            minMeters < 1000
+              ? `${minMeters}m`
+              : `${(minMeters / 1000).toFixed(1)}km`
+        }
+
         return (
           <button
             key={route.id}
@@ -38,7 +59,17 @@ function List({ routes }: IListProps) {
               connection.joinRoute(route)
             }}
           >
-            {route.name}
+            <span className='flex-1 text-left'>{route.name}</span>
+            {count > 0 && (
+              <span className='badge badge-success badge-sm gap-1'>
+                {count} bus{count > 1 ? 'es' : ''}
+                {closestDistance && (
+                  <span className='font-sans font-normal'>
+                    ~{closestDistance}
+                  </span>
+                )}
+              </span>
+            )}
           </button>
         )
       })}
