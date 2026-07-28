@@ -5,7 +5,8 @@ import { getSearchedRoutes } from '../../db/queries'
 import { Route } from '../../db/schema'
 import { haversine } from '../../lib/coordinates'
 import { connection } from '../connection'
-import { chosenRoute, chosenStop, presenceIndex } from '../stores'
+import { flyToFeeder } from '../geo/map'
+import { chosenRoute, chosenStop, insideBus, presenceIndex } from '../stores'
 import { suspendFn } from '../suspense-utils'
 import { BackButton } from './backButton'
 
@@ -51,9 +52,34 @@ function List({ routes }: IListProps) {
             type='button'
             onClick={() => {
               chosenRoute.value = route
+              insideBus.value = false
 
               if (chosenStop.value === null) {
                 return
+              }
+
+              const routeFeeders = presenceIndex.value.get(route.id) || []
+              const activeFeeders = routeFeeders.filter(
+                f => Date.now() - f.lastSeen < 90_000
+              )
+
+              if (activeFeeders.length > 0) {
+                const closest = activeFeeders.reduce((best, f) => {
+                  const dist = haversine(
+                    chosenStop.value!.lat,
+                    chosenStop.value!.lon,
+                    f.lat,
+                    f.lon
+                  )
+                  const bestDist = haversine(
+                    chosenStop.value!.lat,
+                    chosenStop.value!.lon,
+                    best.lat,
+                    best.lon
+                  )
+                  return dist < bestDist ? f : best
+                })
+                flyToFeeder(closest.lat, closest.lon)
               }
 
               connection.joinRoute(route)

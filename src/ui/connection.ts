@@ -1,9 +1,13 @@
 import type { GDB, RoomChannel } from 'genosdb'
 import type { Route } from '../db/schema'
 import {
+  chosenRoute,
   connectionState,
+  drawerOpen,
   type FeederPresence,
   feeders,
+  insideBus,
+  mapMode,
   presenceIndex,
   insideBus as storesInsideBus
 } from './stores'
@@ -22,6 +26,7 @@ class Connection {
   private presenceChannel: RoomChannel | undefined
   private presenceBroadcastTimer: ReturnType<typeof setInterval> | undefined
   private presenceSweepTimer: ReturnType<typeof setInterval> | undefined
+  private joinGeneration = 0
 
   private async ensureDB() {
     if (this.db) return
@@ -118,14 +123,25 @@ class Connection {
   }
 
   async joinRoute(route: Route) {
+    const gen = ++this.joinGeneration
     if (this.routeId === route.id && this.gpsChannel) return
-    await this.leaveRoute()
+
+    this.stopGPS()
+    if (this.gpsChannel && this.gpsHandler) {
+      this.gpsChannel.off('message', this.gpsHandler)
+    }
+    this.gpsChannel = undefined
+    this.gpsHandler = undefined
+    this.routeId = undefined
+    feeders.value = []
 
     this.routeId = route.id
     connectionState.value = 'joining'
 
     try {
       await this.ensureDB()
+
+      if (gen !== this.joinGeneration) return
 
       if (!this.db?.room) {
         throw new Error('db room not available')
@@ -136,6 +152,8 @@ class Connection {
       if (!this.gpsChannel) {
         throw new Error('failed to create channel')
       }
+
+      if (gen !== this.joinGeneration) return
 
       this.gpsChannel.on(
         'message',
@@ -173,18 +191,25 @@ class Connection {
         })
       )
 
+      if (gen !== this.joinGeneration) return
+
       if (storesInsideBus.value) {
         this.startGPS()
       }
 
       connectionState.value = 'joined'
+      mapMode.value = 'tracking'
     } catch (err) {
       console.error('[connection] failed to join room:', err)
-      connectionState.value = 'error'
+      if (gen === this.joinGeneration) {
+        this.routeId = undefined
+        connectionState.value = 'error'
+      }
     }
   }
 
   async leaveRoute() {
+    this.joinGeneration++
     this.stopGPS()
 
     if (this.gpsChannel && this.gpsHandler) {
@@ -198,6 +223,7 @@ class Connection {
     // Presence is city-wide data, not route-specific. Clearing it
     // on leaveRoute would erase feeder badges for other routes.
     connectionState.value = 'idle'
+    mapMode.value = 'discovery'
   }
 
   updatePosition(loc: GeolocationCoordinates) {
@@ -254,3 +280,10 @@ class Connection {
 }
 
 export const connection = new Connection()
+
+export function handleBack() {
+  connection.leaveRoute()
+  chosenRoute.value = null
+  insideBus.value = false
+  drawerOpen.value = true
+}

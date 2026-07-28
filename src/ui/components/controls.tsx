@@ -1,14 +1,15 @@
 import { useSignal } from '@preact/signals'
+import CarbonArrowLeft from '~icons/carbon/arrow-left'
 import CarbonCenterCircle from '~icons/carbon/center-circle'
 import GisPoisO from '~icons/gis/pois-o'
+import { handleBack } from '../connection'
 import { recenterMap } from '../geo/map'
-import { theme } from '../stores'
+import { drawerOpen, mapMode, theme } from '../stores'
 import { RouteList } from './routeList'
 import { StopList } from './stopList'
 import { TrackingControls } from './trackingControls'
 
 export function Controls() {
-  const open = useSignal(true)
   const isDark = useSignal(theme.value === 'dracula')
 
   const toggle = () => {
@@ -24,7 +25,7 @@ export function Controls() {
           className='btn btn-circle btn-sm btn-soft shadow-lg'
           type='button'
           onClick={() => {
-            open.value = !open.value
+            drawerOpen.value = !drawerOpen.value
           }}
         >
           <GisPoisO className='stroke-2' />
@@ -45,14 +46,24 @@ export function Controls() {
         >
           {isDark.value ? '🌙' : '☀️'}
         </button>
+        {mapMode.value === 'tracking' && (
+          <button
+            className='btn btn-circle btn-sm btn-soft shadow-lg'
+            type='button'
+            aria-label='Back to all feeders'
+            onClick={handleBack}
+          >
+            <CarbonArrowLeft className='w-4 h-4' />
+          </button>
+        )}
       </div>
 
       <div
         className='fixed inset-x-0 bottom-0 z-30 px-3 pb-3 transition-all duration-300 ease-out'
         style={{
-          transform: open.value ? 'translateY(0)' : 'translateY(100%)',
-          opacity: open.value ? 1 : 0,
-          pointerEvents: open.value ? 'auto' : 'none'
+          transform: drawerOpen.value ? 'translateY(0)' : 'translateY(100%)',
+          opacity: drawerOpen.value ? 1 : 0,
+          pointerEvents: drawerOpen.value ? 'auto' : 'none'
         }}
       >
         <div className='card bg-base-100/95 backdrop-blur border border-base-300 shadow-2xl'>

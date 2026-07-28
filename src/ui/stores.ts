@@ -31,6 +31,10 @@ export const connectionState = signal<'idle' | 'joining' | 'joined' | 'error'>(
   'idle'
 )
 
+export const mapMode = signal<'discovery' | 'tracking'>('discovery')
+export const stopRoutes = signal<Route[]>([])
+export const drawerOpen = signal(true)
+
 export const isInitializingDatabase = signal(true)
 
 export type TTheme = 'dracula' | 'lemonade'

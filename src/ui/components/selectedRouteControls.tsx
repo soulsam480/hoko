@@ -1,6 +1,6 @@
 import CarbonChevronLeft from '~icons/carbon/chevron-left'
 import GisLocation from '~icons/gis/location'
-import { connection } from '../connection'
+import { connection, handleBack } from '../connection'
 import { chosenRoute, chosenStop, insideBus } from '../stores'
 
 export function SelectedRouteControls() {
@@ -10,11 +10,7 @@ export function SelectedRouteControls() {
         <button
           className='btn btn-circle btn-ghost btn-sm'
           type='button'
-          onClick={() => {
-            connection.leaveRoute()
-            insideBus.value = false
-            chosenRoute.value = null
-          }}
+          onClick={handleBack}
           aria-label='Back'
         >
           <CarbonChevronLeft className='w-4 h-4' />

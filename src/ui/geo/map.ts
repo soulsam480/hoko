@@ -1,7 +1,11 @@
 import { effect } from '@preact/signals'
 import * as L from 'leaflet'
 import { isReady } from '../../db/client'
-import { getClosestStops, getStopsForRoute } from '../../db/queries'
+import {
+  getClosestStops,
+  getRoutesForStop,
+  getStopsForRoute
+} from '../../db/queries'
 import { clusterFeeders, haversine } from '../../lib/coordinates'
 import { connection } from '../connection'
 import {
@@ -9,11 +13,17 @@ import {
   chosenStop,
   closestStops,
   connectionState,
+  drawerOpen,
+  type FeederPresence,
   feeders,
   gpsSignal,
+  mapMode,
+  presenceIndex,
+  stopRoutes,
   TTheme,
   theme
 } from '../stores'
+import { USER_ID } from '../userId'
 
 let myMarker: L.Marker | null = null
 let map: L.Map | null = null
@@ -26,6 +36,7 @@ const TILE_URLS: Record<TTheme, string> = {
 
 const STOP_MARKERS = new Map<number, L.Marker>()
 const BUS_MARKERS = new Map<string, L.Marker>()
+const DISCOVER_MARKERS = new Map<string, L.Marker>()
 
 const STOP_ICON = L.divIcon({
   className: '',
@@ -50,11 +61,39 @@ const BUS_ICON = L.divIcon({
   tooltipAnchor: [0, -14]
 })
 
+const PRESENCE_ICON = L.divIcon({
+  className: 'bus-marker-wrapper',
+  html: `<div class="bus-beacon"></div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28">
+      <rect x="1" y="6" width="26" height="14" rx="3.5" fill="#16a34a" stroke="#fff" stroke-width="1.5"/>
+      <circle cx="7" cy="21" r="3" fill="#fff"/>
+      <circle cx="21" cy="21" r="3" fill="#fff"/>
+      <rect x="4" y="8" width="8" height="5" rx="1.5" fill="#86efac" opacity="0.5"/>
+      <rect x="16" y="8" width="8" height="5" rx="1.5" fill="#86efac" opacity="0.5"/>
+    </svg>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  tooltipAnchor: [0, -14]
+})
+
 function clusterBusIcon(count: number) {
   return L.divIcon({
     className: '',
     html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
       <circle cx="20" cy="20" r="18" fill="#2563eb" stroke="#fff" stroke-width="2.5"/>
+      <text x="20" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#fff">${count}</text>
+    </svg>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    tooltipAnchor: [0, -20]
+  })
+}
+
+function clusterPresenceIcon(count: number) {
+  return L.divIcon({
+    className: '',
+    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
+      <circle cx="20" cy="20" r="18" fill="#16a34a" stroke="#fff" stroke-width="2.5"/>
       <text x="20" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#fff">${count}</text>
     </svg>`,
     iconSize: [40, 40],
@@ -157,6 +196,10 @@ export function flyToStop(id: number) {
   map?.flyTo(marker.getLatLng())
 }
 
+export function flyToFeeder(lat: number, lon: number) {
+  map?.flyTo({ lat, lng: lon })
+}
+
 // Revive tracking after page reload — only if near route stops
 let reviving = false
 
@@ -166,7 +209,12 @@ effect(() => {
   const stop = chosenStop.value
   const loc = gpsSignal.value
 
-  if (!route || !stop || !loc) return
+  if (!route || !stop || !loc) {
+    if (route && !stop) {
+      chosenRoute.value = null
+    }
+    return
+  }
   if (connectionState.value !== 'idle') return
 
   reviving = true
@@ -178,6 +226,8 @@ effect(() => {
       )
 
       if (near && connectionState.value === 'idle') {
+        const routes = await getRoutesForStop(stop.id)
+        stopRoutes.value = routes
         connection.joinRoute(route)
       } else if (connectionState.value === 'idle') {
         chosenRoute.value = null
@@ -252,6 +302,12 @@ effect(() => {
 
       marker.on('click', () => {
         chosenStop.value = stop
+        drawerOpen.value = true
+        isReady().then(() =>
+          getRoutesForStop(stop.id).then(routes => {
+            stopRoutes.value = routes
+          })
+        )
       })
 
       STOP_MARKERS.set(stop.id, marker)
@@ -261,13 +317,116 @@ effect(() => {
   }
 })
 
+// Discovery feeders — presence-based markers
 effect(() => {
+  const mode = mapMode.value
+  const routes = stopRoutes.value
+
+  if (map === null) return
+
+  // Clear discovery markers when not in discovery mode
+  if (mode !== 'discovery' || routes.length === 0) {
+    for (const [, marker] of DISCOVER_MARKERS) {
+      marker.remove()
+    }
+    DISCOVER_MARKERS.clear()
+    return
+  }
+
+  const routeIds = new Set(routes.map(r => r.id))
+  const index = presenceIndex.value
+  const filtered: FeederPresence[] = []
+  for (const [routeId, feeders] of index) {
+    if (routeIds.has(routeId)) {
+      filtered.push(
+        ...feeders.filter(
+          f => Date.now() - f.lastSeen < 90_000 && f.userId !== USER_ID
+        )
+      )
+    }
+  }
+
+  const clusters = clusterFeeders(filtered, 50)
+  const clusterKeys = new Set(
+    clusters.map(c => `${c.routeId}:${c.ids.join(',')}`)
+  )
+
+  // Remove stale markers
+  for (const [key, marker] of DISCOVER_MARKERS) {
+    if (!clusterKeys.has(key)) {
+      marker.remove()
+      DISCOVER_MARKERS.delete(key)
+    }
+  }
+
+  // Create/update markers
+  for (const cluster of clusters) {
+    const key = `${cluster.routeId}:${cluster.ids.join(',')}`
+    let marker = DISCOVER_MARKERS.get(key)
+
+    if (cluster.count > 1) {
+      if (!marker) {
+        marker = L.marker(cluster.center, {
+          icon: clusterPresenceIcon(cluster.count)
+        }).addTo(map)
+        marker.bindTooltip(`${cluster.count} buses`, { direction: 'top' })
+        DISCOVER_MARKERS.set(key, marker)
+      }
+      marker.setLatLng(cluster.center)
+    } else {
+      if (!marker) {
+        marker = L.marker(cluster.center, { icon: PRESENCE_ICON }).addTo(map)
+        marker.bindTooltip('', { direction: 'top' })
+        DISCOVER_MARKERS.set(key, marker)
+      }
+      marker.setLatLng(cluster.center)
+
+      const feeder = filtered.find(f => f.userId === cluster.ids[0])
+      const secondsAgo = feeder
+        ? Math.round((Date.now() - feeder.lastSeen) / 1000)
+        : 0
+      marker.setTooltipContent(`Bus · ${secondsAgo}s ago`)
+    }
+
+    marker.off('click')
+    marker.on('click', async () => {
+      const route = routes.find(r => r.id === cluster.routeId)
+      if (route) {
+        chosenRoute.value = route
+        drawerOpen.value = true
+        await connection.joinRoute(route)
+      }
+    })
+  }
+})
+
+// GPS feeders — only visible in tracking mode
+effect(() => {
+  const mode = mapMode.value
   const currentFeeders = feeders.value
   if (map === null) return
 
-  const clusters = clusterFeeders(currentFeeders, 50)
+  // Clear GPS markers when not tracking
+  if (mode !== 'tracking' || currentFeeders.length === 0) {
+    for (const [, marker] of BUS_MARKERS) {
+      marker.remove()
+    }
+    BUS_MARKERS.clear()
+    return
+  }
 
-  const clusterKeys = new Set(clusters.map(c => c.ids.join(',')))
+  const clusters = clusterFeeders(
+    currentFeeders.map(f => ({
+      ...f,
+      routeId: chosenRoute.value?.id ?? 0,
+      lastSeen: f.lastSeen
+    })) as FeederPresence[],
+    50
+  )
+
+  const clusterKeys = new Set(
+    clusters.map(c => `${c.routeId}:${c.ids.join(',')}`)
+  )
   for (const [key, marker] of BUS_MARKERS) {
     if (!clusterKeys.has(key)) {
       marker.remove()
@@ -276,7 +435,7 @@ effect(() => {
   }
 
   for (const cluster of clusters) {
-    const key = cluster.ids.join(',')
+    const key = `${cluster.routeId}:${cluster.ids.join(',')}`
     let marker = BUS_MARKERS.get(key)
 
     if (cluster.count > 1) {
@@ -284,7 +443,6 @@ effect(() => {
         marker = L.marker(cluster.center, {
           icon: clusterBusIcon(cluster.count)
         }).addTo(map)
-
         marker.bindTooltip(`${cluster.count} buses`, { direction: 'top' })
         BUS_MARKERS.set(key, marker)
       }

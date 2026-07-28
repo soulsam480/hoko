@@ -1,7 +1,9 @@
 import CarbonBus from '~icons/carbon/bus'
 import CarbonChevronRight from '~icons/carbon/chevron-right'
+import { isReady } from '../../db/client'
+import { getRoutesForStop } from '../../db/queries'
 import { flyToStop } from '../geo/map'
-import { chosenStop, closestStops } from '../stores'
+import { chosenStop, closestStops, stopRoutes } from '../stores'
 
 export function StopList() {
   if (chosenStop.value) {
@@ -28,8 +30,12 @@ export function StopList() {
               className='list-row items-center py-2 px-2 rounded-field hover:bg-base-200 cursor-pointer transition-colors'
               onClick={() => {
                 chosenStop.value = stop
-
                 flyToStop(stop.id)
+                isReady().then(() =>
+                  getRoutesForStop(stop.id).then(routes => {
+                    stopRoutes.value = routes
+                  })
+                )
               }}
             >
               <div className='avatar avatar-placeholder'>
